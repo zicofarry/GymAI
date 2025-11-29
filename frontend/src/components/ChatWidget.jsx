@@ -10,23 +10,35 @@ export default function ChatWidget() {
   const [mode, setMode] = useState('info'); // 'info' or 'action'
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [messages, setMessages] = useState([
-    { 
-        id: 1, 
-        text: "Halo! Saya GymAI Assistant. Ada yang bisa saya bantu? 👋", 
-        sender: 'ai', 
-        mode: 'info' 
-    }
-  ]);
+  
+  // PERUBAHAN UTAMA: Mengubah messages menjadi object untuk menampung riwayat chat per mode
+  const [chatHistories, setChatHistories] = useState({
+      info: [
+          { 
+              id: 1, 
+              text: "Halo! Saya GymAI Assistant. Ada yang bisa saya bantu? 👋", 
+              sender: 'ai', 
+              mode: 'info' 
+          }
+      ],
+      action: [
+          { 
+              id: 2, 
+              text: "Mode Update Data: Sampaikan perubahan data Anda (e.g., berat, tinggi, goal). ⚡️", 
+              sender: 'ai', 
+              mode: 'action' 
+          }
+      ]
+  });
   
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const navigate = useNavigate();
 
-  // Auto-scroll ke pesan terakhir
+  // Auto-scroll ke pesan terakhir (Diperbarui untuk bergantung pada chatHistories dan mode)
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isOpen]);
+  }, [chatHistories, mode, isOpen]);
 
   // Focus input saat dibuka
   useEffect(() => {
@@ -43,11 +55,12 @@ export default function ChatWidget() {
     const currentMode = mode;
     setInput(''); // Clear input segera agar UI responsif
 
-    // 1. Tambahkan pesan user ke UI
-    setMessages(prev => [
-        ...prev, 
-        { id: Date.now(), text: userMessage, sender: 'user', mode: currentMode }
-    ]);
+    // 1. Tambahkan pesan user ke UI (Diperbarui)
+    const userMsgObject = { id: Date.now(), text: userMessage, sender: 'user', mode: currentMode };
+    setChatHistories(prev => ({
+        ...prev,
+        [currentMode]: [...prev[currentMode], userMsgObject]
+    }));
 
     setLoading(true);
 
@@ -66,18 +79,21 @@ export default function ChatWidget() {
             { headers: { 'Authorization': `Bearer ${token}` } }
         );
 
-        // 3. Tambahkan balasan AI ke UI
-        setMessages(prev => [
-            ...prev, 
-            { id: Date.now() + 1, text: response.data.reply, sender: 'ai', mode: currentMode }
-        ]);
+        // 3. Tambahkan balasan AI ke UI (Diperbarui)
+        const aiReplyObject = { id: Date.now() + 1, text: response.data.reply, sender: 'ai', mode: currentMode };
+        setChatHistories(prev => ({
+            ...prev,
+            [currentMode]: [...prev[currentMode], aiReplyObject]
+        }));
 
     } catch (error) {
         console.error("Chat Error:", error);
-        setMessages(prev => [
-            ...prev, 
-            { id: Date.now() + 1, text: "Maaf, terjadi kesalahan koneksi. Coba lagi nanti.", sender: 'ai', isError: true }
-        ]);
+        // Tampilkan pesan error (Diperbarui)
+        const errorMsgObject = { id: Date.now() + 1, text: "Maaf, terjadi kesalahan koneksi. Coba lagi nanti.", sender: 'ai', isError: true, mode: currentMode };
+        setChatHistories(prev => ({
+            ...prev,
+            [currentMode]: [...prev[currentMode], errorMsgObject]
+        }));
     } finally {
         setLoading(false);
     }
@@ -115,7 +131,7 @@ export default function ChatWidget() {
                 {/* Mode Switcher */}
                 <div className="flex bg-gray-800/50 p-1 rounded-lg">
                     <button 
-                        onClick={() => setMode('info')}
+                        onClick={() => { setMode('info'); setInput(''); }} // FIX: Clear input on mode switch
                         className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-bold transition-all ${
                             mode === 'info' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-white'
                         }`}
@@ -123,7 +139,7 @@ export default function ChatWidget() {
                         <Info size={14} /> Tanya Coach
                     </button>
                     <button 
-                        onClick={() => setMode('action')}
+                        onClick={() => { setMode('action'); setInput(''); }} // FIX: Clear input on mode switch
                         className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-bold transition-all ${
                             mode === 'action' ? 'bg-brand-red text-white shadow-sm' : 'text-gray-400 hover:text-white'
                         }`}
@@ -135,7 +151,8 @@ export default function ChatWidget() {
 
             {/* Chat Area */}
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-3">
-                {messages.map((msg) => (
+                {/* FIX: Render riwayat chat berdasarkan mode aktif */}
+                {chatHistories[mode].map((msg) => (
                     <div 
                         key={msg.id} 
                         className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -188,13 +205,12 @@ export default function ChatWidget() {
       )}
 
       {/* --- FLOATING BUTTON --- */}
+      {/* The bounce animation now uses the custom animate-bounce-slow class for a smoother feel */}
       <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className={`p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center ${
-            isOpen ? 'bg-gray-900 rotate-90' : 'bg-gradient-to-r from-brand-red to-red-600 animate-bounce-slow'
-        }`}
+          onClick={() => setIsOpen(true)} 
+          className={`p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center bg-gradient-to-r from-brand-red to-red-600 animate-bounce-slow ${isOpen ? 'hidden' : ''}`}
       >
-        {isOpen ? <X size={28} className="text-white" /> : <MessageCircle size={32} className="text-white" />}
+          <MessageCircle size={32} className="text-white" />
       </button>
     </div>
   );
