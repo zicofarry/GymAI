@@ -6,3 +6,4 @@ from app.db.base_class import Base
 from app.models.user import User, UserBusyTime
 from app.models.exercise import Exercise
 from app.models.schedule import Schedule, ScheduleItem
+from app.models.log import UserLog
