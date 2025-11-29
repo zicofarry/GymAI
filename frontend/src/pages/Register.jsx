@@ -1,40 +1,103 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
-import { UserPlus, AtSign, Lock, User as UserIcon } from 'lucide-react'; // Ikon baru
+import { UserPlus, AtSign, Lock, User as UserIcon, CheckCircle2, AlertTriangle, X } from 'lucide-react'; 
+
+// Base URL
+const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+
+// --- MODAL KEGAGALAN (REUSABLE STRUCTURE) ---
+const FailureModal = ({ title, message, onClose }) => (
+    <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-space transition-opacity duration-300">
+        <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center border-2 border-red-200 ring-4 ring-red-500/20 transform scale-105">
+            <AlertTriangle size={48} className="text-brand-red mx-auto mb-4" strokeWidth={2.5}/>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">{title}</h3>
+            <p className="text-gray-600 mb-6">{message}</p>
+            <button 
+                onClick={onClose}
+                className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-black transition transform hover:-translate-y-0.5"
+            >
+                TRY AGAIN
+            </button>
+        </div>
+    </div>
+);
+// --- MODAL KEBERHASILAN (Success) ---
+const RegisterSuccessModal = () => (
+    <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-space">
+        <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-xs text-center border-2 border-green-200 ring-4 ring-green-500/20 transform scale-105">
+            <CheckCircle2 size={40} className="text-green-500 mx-auto mb-4 animate-pulse" strokeWidth={2}/>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Registration Success!</h3>
+            <p className="text-gray-600">Redirecting to login page...</p>
+        </div>
+    </div>
+);
+
 
 export default function Register() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [errorModal, setErrorModal] = useState({ show: false, title: '', message: '' }); // NEW STATE
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (showSuccessModal) {
+      const timer = setTimeout(() => {
+        navigate('/login', { replace: true });
+      }, 1500); 
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessModal, navigate]);
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorModal({ show: false, title: '', message: '' }); // Reset error
+    
     try {
-      await axios.post('http://127.0.0.1:8000/api/v1/register', { username, email, password });
-      alert("Registrasi Berhasil! Silakan Login.");
-      navigate('/login');
+      await axios.post(`${API_BASE_URL}/register`, { username, email, password });
+      
+      setShowSuccessModal(true); 
+
     } catch (error) {
       console.error(error);
-      if (error.response && error.response.data) {
-        alert(`Gagal Register: ${error.response.data.detail}`);
-      } else {
-        alert("Gagal Register: Tidak dapat terhubung ke server Backend.");
-      }
+      const detail = error.response?.data?.detail;
+      
+      // Ganti alert() dengan Modal
+      setErrorModal({
+          show: true,
+          title: "Registration Failed",
+          message: detail || "Gagal terhubung ke server Backend. Coba lagi."
+      });
+
     } finally {
       setLoading(false);
     }
   };
-
+  
+  if (showSuccessModal) {
+      return <RegisterSuccessModal />;
+  }
+  
   return (
     <div className="min-h-screen bg-[#FAFAFA] font-space flex flex-col pt-32"> 
       <Navbar />
-      <div className="flex flex-1 justify-center items-center px-4 mb-20">
-        {/* Hapus shadow-2xl, ganti dengan shadow-md yang sangat halus */}
+      
+      {/* RENDER MODAL KEGAGALAN JIKA ADA */}
+      {errorModal.show && (
+          <FailureModal
+              title={errorModal.title}
+              message={errorModal.message}
+              onClose={() => setErrorModal({ show: false, title: '', message: '' })}
+          />
+      )}
+
+      <div className={`flex flex-1 justify-center items-center px-4 mb-20 ${errorModal.show ? 'opacity-30 pointer-events-none' : ''}`}>
+        {/* Konten Form */}
         <div className="bg-white p-8 rounded-3xl shadow-md w-full max-w-md border border-gray-200 ring-1 ring-gray-200/50">
           <div className="text-center mb-6">
             <UserPlus size={40} className="text-brand-red mx-auto mb-2" strokeWidth={2.5}/>

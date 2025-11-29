@@ -57,12 +57,13 @@ export default function Home() {
         {/* CTA BUTTONS */}
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
             <Link 
-                to="/create"
-                className="group relative bg-gray-900 text-white text-base font-bold py-4 px-10 rounded-full overflow-hidden transition-all hover:scale-105 hover:shadow-xl hover:shadow-gray-900/20"
+              to="/schedule"
+              className="group relative bg-gray-900 text-white text-base font-bold py-4 px-10 rounded-full overflow-hidden transition-all hover:scale-105 hover:shadow-xl hover:shadow-gray-900/20"
             >
                 <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
                 <div className="flex items-center gap-2 relative z-10">
-                    Generate Plan <ArrowRight size={18} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
+                    GENERATE PLAN 
+                    <ArrowRight size={18} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
                 </div>
             </Link>
             

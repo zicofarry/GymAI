@@ -1,40 +1,131 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
-import { LogIn, AtSign, Lock } from 'lucide-react'; // Ikon baru
+import { LogIn, AtSign, Lock, Loader2, CheckCircle2, AlertTriangle, X } from 'lucide-react'; 
+
+// Base URL (Disematkan di sini agar file mandiri)
+const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+
+// --- MODAL KEGAGALAN LOGIN (NEW) ---
+const LoginFailureModal = ({ onTryAgain }) => (
+    <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-space transition-opacity duration-300">
+        <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-xs text-center border-2 border-red-200 ring-4 ring-red-500/20 transform scale-105">
+            
+            <button 
+                onClick={onTryAgain} 
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition"
+                title="Close"
+            >
+                <X size={24} />
+            </button>
+            
+            <AlertTriangle size={48} className="text-brand-red mx-auto mb-4" strokeWidth={2.5}/>
+            
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Authentication Failed</h3>
+            <p className="text-gray-600 mb-6">
+                Email atau Password salah. Silakan coba periksa kembali.
+            </p>
+            
+            <button 
+                onClick={onTryAgain}
+                className="w-full bg-brand-red text-white py-3 rounded-xl font-bold hover:bg-red-600 transition transform hover:-translate-y-0.5"
+            >
+                TRY AGAIN
+            </button>
+        </div>
+    </div>
+);
+
+
+// --- MODAL KEBERHASILAN REDIRECT (Dari sebelumnya) ---
+const LoginRedirectModal = () => (
+    <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-space">
+        <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-xs text-center border-2 border-green-200 ring-4 ring-green-500/20 transform scale-105">
+            
+            <CheckCircle2 size={40} className="text-green-500 mx-auto mb-4 animate-pulse" strokeWidth={2}/>
+            
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Login Successful!</h3>
+            <p className="text-gray-600 mb-4 flex items-center justify-center gap-2">
+                 <Loader2 size={16} className="animate-spin text-brand-red"/> 
+                 Checking your plan...
+            </p>
+        </div>
+    </div>
+);
+
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showRedirectModal, setShowRedirectModal] = useState(false);
+  const [showFailureModal, setShowFailureModal] = useState(false); // NEW STATE for Failure Modal
   const navigate = useNavigate();
+
+  // --- LOGIC SMART REDIRECT (Success) ---
+  useEffect(() => {
+    if (showRedirectModal) {
+        const checkAndRedirect = async () => {
+            const token = localStorage.getItem('token');
+            
+            try {
+                await axios.get(`${API_BASE_URL}/schedules/my-schedule`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                
+                setTimeout(() => navigate('/result', { replace: true }), 1200); 
+            } catch (error) {
+                if (error.response?.status === 404) {
+                    setTimeout(() => navigate('/create', { replace: true }), 1200);
+                } else {
+                    setTimeout(() => navigate('/', { replace: true }), 1200); 
+                }
+            }
+        };
+        checkAndRedirect();
+    }
+  }, [showRedirectModal, navigate]);
+
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true); // Mulai loading
+    setLoading(true);
+    // Pastikan modal gagal ditutup jika user mencoba login lagi
+    setShowFailureModal(false); 
+    
     try {
-      const res = await axios.post('http://127.0.0.1:8000/api/v1/login', { email, password });
+      const res = await axios.post(`${API_BASE_URL}/login`, { email, password });
       
-      // Simpan Token di LocalStorage
       localStorage.setItem('token', res.data.access_token);
       localStorage.setItem('username', res.data.username);
       
-      alert(`Selamat datang, ${res.data.username}! Login Berhasil.`);
-      navigate('/create'); // Arahkan ke halaman Create Schedule
+      // Sukses: Tampilkan modal redirect
+      setShowRedirectModal(true); 
+
     } catch (error) {
       console.error(error);
-      alert("Login Gagal: Email atau Password salah!");
+      // GAGAL: Tampilkan modal kegagalan
+      setShowFailureModal(true); 
+
     } finally {
-      setLoading(false); // Selesai loading
+      setLoading(false);
     }
   };
 
+  // Jika salah satu modal aktif, render modal itu
+  if (showRedirectModal) {
+    return <LoginRedirectModal />;
+  }
+  
   return (
     <div className="min-h-screen bg-[#FAFAFA] font-space flex flex-col pt-32"> 
       <Navbar />
-      <div className="flex flex-1 justify-center items-center px-4 mb-20"> 
-        {/* Hapus shadow-2xl, ganti dengan shadow-md yang sangat halus */}
+      
+      {/* RENDER MODAL KEGAGALAN JIKA ADA */}
+      {showFailureModal && <LoginFailureModal onTryAgain={() => setShowFailureModal(false)} />}
+
+      <div className={`flex flex-1 justify-center items-center px-4 mb-20 transition-opacity ${showFailureModal ? 'opacity-30 pointer-events-none' : ''}`}> 
         <div className="bg-white p-8 rounded-3xl shadow-md w-full max-w-md border border-gray-200 ring-1 ring-gray-200/50">
           <div className="text-center mb-6">
             <LogIn size={40} className="text-brand-red mx-auto mb-2" strokeWidth={2.5}/>

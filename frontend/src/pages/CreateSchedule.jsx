@@ -4,13 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
     User, Activity, Target, Calendar, Check, X, Clock, Plus, Trash, 
-    Weight, Ruler, Dumbbell, Zap, TrendingUp, Heart, Armchair 
+    Weight, Ruler, Dumbbell, Zap, TrendingUp, Heart, Armchair, AlertTriangle, Lock 
 } from 'lucide-react';
 
 // --- UTILS & CONSTANTS ---
-// Simple ID generator (pengganti nanoid agar tidak perlu install lib tambahan)
 const generateId = () => Math.random().toString(36).substr(2, 9);
-
 const ALL_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const FITNESS_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'Athlete'];
 const GOALS = {
@@ -20,109 +18,84 @@ const GOALS = {
     'Flexibility': Armchair
 };
 
-// Initial state helpers
-const getInitialBusySlots = () => {
-    return ALL_DAYS.reduce((acc, day) => {
-        acc[day] = []; 
-        return acc;
-    }, {});
-};
+const getInitialBusySlots = () => ALL_DAYS.reduce((acc, day) => { acc[day] = []; return acc; }, {});
+const getInitialFullDayBlocked = () => ALL_DAYS.reduce((acc, day) => { acc[day] = false; return acc; }, {});
 
-const getInitialFullDayBlocked = () => {
-    return ALL_DAYS.reduce((acc, day) => {
-        acc[day] = false; 
-        return acc;
-    }, {});
-};
+// Base URL
+const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 
-// --- COMPONENT TERPISAH (WAJIB DI LUAR UTAMA AGAR INPUT TIDAK HILANG FOKUS) ---
-const StepCard = ({ num, title, currentStep, setStep, icon: Icon, isActive, isCompleted, canAdvance, handleNextStep, children }) => {
-    const isLocked = num > currentStep && !isCompleted;
-    
-    return (
-      <div className="flex">
-        {/* Timeline Indicator */}
-        <div className="flex flex-col items-center mr-4 md:mr-6">
-            <span className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 relative z-10 shadow-lg ${
-              isActive ? 'bg-brand-red text-white ring-4 ring-red-500/30' : 
-              isCompleted ? 'bg-green-500 text-white shadow-xl' : 
-              'bg-white text-gray-500 border-2 border-gray-200'
-            }`}>
-              {isCompleted ? <Check size={18} /> : num}
-            </span>
-            {num < 4 && (
-                <div className={`w-1 flex-grow transition-colors duration-500 ${isCompleted ? 'bg-green-300' : 'bg-gray-200'}`}></div>
-            )}
-        </div>
 
-        {/* Content Card */}
-        <div className="flex-grow">
-          <div 
-            className={`bg-white p-6 rounded-3xl shadow-sm w-full mb-6 transition-all duration-300 border-2 ${
-              isLocked ? 'border-gray-100 opacity-50 cursor-not-allowed' : 
-              isActive ? 'border-gray-900 ring-1 ring-gray-900/5 shadow-xl' : 
-              'border-gray-100 hover:shadow-md cursor-pointer'
-            }`}
-            onClick={() => !isLocked && setStep(num)}
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <Icon className={isActive ? "text-brand-red" : isCompleted ? "text-green-500" : "text-gray-400"} size={24} /> 
-              <span className={`font-bold text-lg ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>{title}</span>
-            </div>
+// --- MODAL KHUSUS AUTH (HARUS ADA DI SINI!) ---
+const AuthModal = ({ handleRedirect }) => (
+    <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-space transition-opacity duration-300">
+        <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center border-2 border-gray-200 ring-1 ring-gray-100 transform scale-105">
             
-            {/* Render isi hanya jika aktif */}
-            {isActive && 
-              <div className="pt-4 border-t border-gray-100 animate-fadeIn">
-                {children}
-                
-                {/* Tombol Next Step di dalam Card */}
-                {num < 4 && (
-                  <button 
-                    onClick={(e) => {
-                        e.stopPropagation(); // Mencegah klik card saat klik tombol
-                        handleNextStep(num);
-                    }} 
-                    disabled={!canAdvance(num)}
-                    className={`w-full mt-6 bg-gray-900 text-white py-3 rounded-xl font-semibold transition transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      canAdvance(num) ? 'hover:bg-black' : ''
-                    }`}
-                  >
-                    Next Step →
-                  </button>
-                )}
-              </div>
-            }
-          </div>
+            {/* Ikon Kunci */}
+            <Lock size={48} className="text-brand-red mx-auto mb-4" strokeWidth={2}/>
+            
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Access Required</h3>
+            <p className="text-gray-600 mb-6">
+                Anda harus login untuk membuat jadwal yang dipersonalisasi oleh AI.
+            </p>
+            
+            {/* Tombol Login */}
+            <button 
+                onClick={handleRedirect}
+                className="w-full bg-brand-red text-white py-3 rounded-xl font-bold hover:bg-red-600 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            >
+                <Lock size={20}/> GO TO LOGIN
+            </button>
         </div>
-      </div>
-    );
-};
+    </div>
+);
 
-// --- COMPONENT UTAMA ---
+
+// --- MODAL KEGAGALAN API/VALIDASI (REUSABLE) ---
+const FailureModal = ({ title, message, onClose }) => (
+    <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-space transition-opacity duration-300">
+        <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center border-2 border-red-200 ring-4 ring-red-500/20 transform scale-105">
+            <AlertTriangle size={48} className="text-brand-red mx-auto mb-4" strokeWidth={2.5}/>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">{title}</h3>
+            <p className="text-gray-600 mb-6">{message}</p>
+            <button 
+                onClick={onClose}
+                className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-black transition transform hover:-translate-y-0.5"
+            >
+                OK
+            </button>
+        </div>
+    </div>
+);
+
+
+// --- KOMPONEN UTAMA ---
 export default function CreateSchedule() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [errorModal, setErrorModal] = useState({ show: false, title: '', message: '', action: null }); 
 
-  // State Form
   const [formData, setFormData] = useState({
-    weight: '', // String kosong agar placeholder muncul
-    height: '', 
+    weight: '', 
+    height: '',
     fitness_level: 'Beginner',
     goal: 'Muscle Gain',
     location: 'Home',
     sessions_per_week: 3,
-    // Struktur data UI (Complex) -> Nanti di-convert saat submit
     busy_slots: getInitialBusySlots(), 
     full_day_blocked: getInitialFullDayBlocked(),
   });
 
-  // Cek Login
+  const handleLoginRedirect = () => {
+    navigate('/login');
+  }
+
+  // FIX: Memastikan modal muncul saat tidak ada token
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      alert("Anda harus login untuk mengakses halaman ini!");
-      navigate('/login');
+        setShowLoginModal(true); 
     }
   }, [navigate]);
 
@@ -130,27 +103,28 @@ export default function CreateSchedule() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // --- VALIDATION ---
+  // --- LOGIC VALIDATION ---
   const checkCanAdvance = (currentStep) => {
     if (currentStep === 1) {
-      // Validasi Angka: Tidak boleh kosong & harus > 0
       const w = parseFloat(formData.weight);
       const h = parseInt(formData.height);
       return !isNaN(w) && w > 0 && !isNaN(h) && h > 0;
     }
-    return true; // Step lain selalu valid (ada default value)
+    return true; 
   };
 
   const handleNextStep = (num) => {
       if (checkCanAdvance(num)) {
           setStep(num + 1);
-          // Opsi: window.scrollTo(0, 0); jika halaman panjang
       } else {
-          alert("Mohon isi Berat dan Tinggi badan dengan angka yang valid.");
+          setErrorModal({
+              show: true,
+              title: "Validation Error",
+              message: "Mohon isi Berat dan Tinggi badan dengan angka yang valid dan lebih dari nol.",
+          });
       }
   };
 
-  // --- BUSY SLOTS LOGIC ---
   const handleSlotChange = (day, slotId, field, value) => {
       setFormData(prev => ({
           ...prev,
@@ -165,6 +139,7 @@ export default function CreateSchedule() {
 
   const handleAddSlot = (day) => {
       if (formData.full_day_blocked[day]) return;
+      
       setFormData(prev => ({
           ...prev,
           busy_slots: {
@@ -193,7 +168,6 @@ export default function CreateSchedule() {
           },
           busy_slots: {
               ...prev.busy_slots,
-              // Jika full day dicentang, hapus semua slot manual
               [day]: isChecked ? [] : (prev.busy_slots[day].length === 0 ? [{ id: generateId(), start_time: "08:00", end_time: "10:00" }] : prev.busy_slots[day])
           }
       }));
@@ -201,11 +175,9 @@ export default function CreateSchedule() {
 
   const handleDayToggle = (day, isChecked) => {
       if (isChecked) {
-          // Default behavior saat centang hari: Tambah 1 slot waktu
           handleFullDayBlock(day, false);
           handleAddSlot(day);
       } else {
-          // Uncheck: Hapus semua
           handleFullDayBlock(day, false);
           setFormData(prev => ({
               ...prev, 
@@ -214,11 +186,77 @@ export default function CreateSchedule() {
       }
   }
 
-  // --- SUBMIT TO BACKEND ---
+
+  // --- COMPONENTS UI (StepCard) ---
+  const StepCard = ({ num, title, currentStep, setStep, icon: Icon, isActive, isCompleted, canAdvance, handleNextStep, children }) => {
+    const isLocked = num > currentStep && !isCompleted;
+    
+    return (
+      <div className="flex">
+        {/* Vertical Timeline Bar */}
+        <div className="flex flex-col items-center mr-4 md:mr-6">
+            <span className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 relative z-10 shadow-lg ${
+              isActive ? 'bg-brand-red text-white ring-4 ring-red-500/30' : 
+              isCompleted ? 'bg-green-500 text-white shadow-xl' : 
+              'bg-white text-gray-500 border-2 border-gray-200'
+            }`}>
+              {isCompleted ? <Check size={18} /> : num}
+            </span>
+            {num < 4 && (
+                <div className={`w-1 flex-grow transition-colors duration-500 ${isCompleted ? 'bg-green-300' : 'bg-gray-200'}`}></div>
+            )}
+        </div>
+
+        {/* Card Content */}
+        <div className="flex-grow">
+          <div 
+            className={`bg-white p-6 rounded-3xl shadow-xl w-full mb-6 transition-all duration-300 border-2 ${
+              isLocked ? 'border-gray-200 opacity-50 cursor-not-allowed' : 
+              isActive ? 'border-gray-900 ring-2 ring-gray-900/10 shadow-xl' : 
+              'border-gray-100 hover:shadow-2xl cursor-pointer'
+            }`}
+            onClick={() => !isLocked && setStep(num)}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <Icon className={isActive ? "text-brand-red" : isCompleted ? "text-green-500" : "text-gray-400"} size={24} /> 
+              <span className={`font-bold text-lg ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>{title}</span>
+            </div>
+            
+            {isActive && 
+              <div className="pt-4 border-t border-gray-100">
+                {children}
+                
+                {num < 4 && (
+                  <button 
+                    onClick={(e) => {
+                        e.stopPropagation(); 
+                        handleNextStep(num);
+                    }} 
+                    disabled={!checkCanAdvance(num)}
+                    className={`w-full mt-6 bg-gray-900 text-white py-3 rounded-xl font-semibold transition transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed ${
+                      checkCanAdvance(num) ? 'hover:bg-black' : ''
+                    }`}
+                  >
+                    Next Step →
+                  </button>
+                )}
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  // --- SUBMISSION LOGIC ---
   const handleSubmit = async () => {
     if (!checkCanAdvance(1)) {
         setStep(1);
-        alert("Mohon lengkapi profil fisik Anda.");
+        setErrorModal({
+            show: true,
+            title: "Validation Error",
+            message: "Mohon isi Berat dan Tinggi badan dengan angka yang valid dan lebih dari nol.",
+        });
         return;
     }
 
@@ -226,9 +264,9 @@ export default function CreateSchedule() {
     if (!token) { navigate('/login'); return; }
 
     setLoading(true);
-    
+    setErrorModal({ show: false, title: '', message: '', action: null });
+
     try {
-        // Transform Data UI ke Data Backend
         let finalBusyTimes = [];
         
         ALL_DAYS.forEach(day => {
@@ -236,18 +274,12 @@ export default function CreateSchedule() {
             const slots = formData.busy_slots[day];
 
             if (isFullDay) {
-                finalBusyTimes.push({
-                    day: day,
-                    is_full_day: true,
-                    start_time: null,
-                    end_time: null
-                });
+                finalBusyTimes.push({ day: day, is_full_day: true, start_time: null, end_time: null });
             } else if (slots.length > 0) {
                 slots.forEach(slot => {
                     finalBusyTimes.push({
                         day: day,
                         is_full_day: false,
-                        // Pastikan format time HH:MM:SS
                         start_time: slot.start_time.length === 5 ? slot.start_time + ":00" : slot.start_time,
                         end_time: slot.end_time.length === 5 ? slot.end_time + ":00" : slot.end_time
                     });
@@ -264,28 +296,33 @@ export default function CreateSchedule() {
             sessions_per_week: parseInt(formData.sessions_per_week),
             busy_times: finalBusyTimes
         };
-
+        
         const response = await axios.post(
-            'http://127.0.0.1:8000/api/v1/schedules/generate', 
+            `${API_BASE_URL}/schedules/generate`, 
             payload, 
-            { 
-                headers: { 
-                    'Authorization': `Bearer ${token}`, 
-                    'Content-Type': 'application/json' 
-                } 
-            }
+            { headers: { 'Authorization': `Bearer ${token}` } }
         );
 
         navigate('/result', { state: { result: response.data } });
 
     } catch (error) {
         console.error("Error generating:", error);
+        
         if (error.response?.status === 401) {
-            alert("Sesi habis. Silakan login kembali.");
+            setErrorModal({
+                show: true,
+                title: "Session Expired",
+                message: "Sesi Anda telah habis. Silakan login kembali.",
+                onClose: handleLoginRedirect
+            });
             localStorage.removeItem('token');
-            navigate('/login');
         } else {
-            alert(error.response?.data?.detail || "Gagal menghubungi server.");
+            setErrorModal({
+                show: true,
+                title: "Server Error",
+                message: error.response?.data?.detail || "Gagal menghubungi server. Pastikan Backend berjalan.",
+                onClose: () => setErrorModal({ show: false, title: '', message: '', action: null })
+            });
         }
     } finally {
         setLoading(false);
@@ -293,10 +330,22 @@ export default function CreateSchedule() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 font-sans">
+    <div className="min-h-screen bg-gray-50 pb-20 font-space">
       <Navbar />
       
-      <div className="max-w-2xl mx-auto px-4 py-10 pt-24">
+      {/* RENDER MODAL AUTH */}
+      {showLoginModal && <AuthModal handleRedirect={handleLoginRedirect} />}
+      
+      {/* RENDER MODAL KEGAGALAN/VALIDASI */}
+      {errorModal.show && (
+          <FailureModal 
+              title={errorModal.title}
+              message={errorModal.message}
+              onClose={errorModal.onClose || (() => setErrorModal({ show: false, title: '', message: '', action: null }))}
+          />
+      )}
+
+      <div className={`max-w-2xl mx-auto px-4 py-10 pt-24 ${showLoginModal || errorModal.show ? 'opacity-30 pointer-events-none' : ''}`}>
         <div className="text-center mb-12">
           <h2 className="text-4xl font-black text-gray-900 leading-tight tracking-tight">Design Your <span className="text-brand-red">Protocol</span></h2>
           <p className="text-gray-500 mt-2 font-medium">Customize your constraints. Let AI handle the complexity.</p>
@@ -354,12 +403,13 @@ export default function CreateSchedule() {
               value={FITNESS_LEVELS.indexOf(formData.fitness_level)}
               onChange={(e) => handleUpdate('fitness_level', FITNESS_LEVELS[e.target.value])}
             />
-            <div className="flex justify-between text-xs font-bold text-gray-400 mt-3 uppercase tracking-wide">
-              <span>Beginner</span>
-              <span>Inter</span>
-              <span>Advanced</span>
-              <span>Athlete</span>
+            <div className="relative flex justify-between text-sm text-gray-600 mt-2 font-medium">
+              <span className='absolute left-0 -translate-x-1/2'>Beginner</span>
+              <span className='absolute left-1/3 -translate-x-1/2'>Inter</span>
+              <span className='absolute left-2/3 -translate-x-1/2'>Adv</span>
+              <span className='absolute right-0 translate-x-1/2'>Athlete</span>
             </div>
+            
             <div className="mt-4 text-center">
                 <span className="bg-gray-900 text-white px-4 py-1 rounded-full text-sm font-bold">
                     {formData.fitness_level}
@@ -381,7 +431,7 @@ export default function CreateSchedule() {
                 {Object.entries(GOALS).map(([goal, Icon]) => (
                   <button 
                     key={goal}
-                    className={`p-4 rounded-xl border-2 text-sm font-bold transition flex flex-col items-center gap-2 ${formData.goal === goal ? 'bg-brand-red text-white border-brand-red shadow-lg shadow-red-200' : 'bg-white text-gray-500 border-gray-100 hover:border-red-200'}`}
+                    className={`py-4 px-3 rounded-xl border-2 text-sm font-bold transition flex flex-col items-center gap-2 ${formData.goal === goal ? 'bg-brand-red text-white border-brand-red shadow-lg shadow-red-200' : 'bg-white text-gray-500 border-gray-100 hover:border-red-200'}`}
                     onClick={() => handleUpdate('goal', goal)}
                   >
                     <Icon size={24} />
