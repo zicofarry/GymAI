@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Nov 29, 2025 at 06:29 AM
+-- Generation Time: Nov 29, 2025 at 06:48 AM
 -- Server version: 8.4.3
 -- PHP Version: 8.3.26
 
@@ -29,15 +29,15 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `exercise_library` (
   `id` int NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `category` enum('Strength','Cardio','Flexibility','HIIT') NOT NULL,
-  `muscle_group` enum('Chest','Back','Legs','Shoulders','Arms','Core','Full Body','Cardio') NOT NULL,
-  `equipment_type` enum('None','Dumbbell','Barbell','Machine','Resistance Band') DEFAULT 'None',
-  `difficulty_level` enum('Beginner','Intermediate','Advanced') DEFAULT 'Beginner',
+  `name` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `category` enum('Strength','Cardio','Flexibility','HIIT') COLLATE utf8mb4_general_ci NOT NULL,
+  `muscle_group` enum('Chest','Back','Legs','Shoulders','Arms','Core','Full Body','Cardio') COLLATE utf8mb4_general_ci NOT NULL,
+  `equipment_type` enum('None','Dumbbell','Barbell','Machine','Resistance Band') COLLATE utf8mb4_general_ci DEFAULT 'None',
+  `difficulty_level` enum('Beginner','Intermediate','Advanced') COLLATE utf8mb4_general_ci DEFAULT 'Beginner',
   `default_duration_minutes` int DEFAULT '10',
   `calories_burn_estimate` int DEFAULT NULL,
-  `description` text
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `description` text COLLATE utf8mb4_general_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `exercise_library`
@@ -63,9 +63,9 @@ CREATE TABLE `schedules` (
   `start_date` date NOT NULL,
   `end_date` date NOT NULL,
   `is_active` tinyint(1) DEFAULT '1',
-  `ai_weekly_motivation` text,
+  `ai_weekly_motivation` text COLLATE utf8mb4_general_ci,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -77,12 +77,12 @@ CREATE TABLE `schedule_items` (
   `id` int NOT NULL,
   `schedule_id` int NOT NULL,
   `exercise_id` int NOT NULL,
-  `day_of_week` enum('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday') NOT NULL,
+  `day_of_week` enum('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday') COLLATE utf8mb4_general_ci NOT NULL,
   `scheduled_time` time NOT NULL,
   `duration_minutes` int NOT NULL,
   `is_completed` tinyint(1) DEFAULT '0',
-  `ai_custom_tips` text
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `ai_custom_tips` text COLLATE utf8mb4_general_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -92,19 +92,19 @@ CREATE TABLE `schedule_items` (
 
 CREATE TABLE `users` (
   `id` int NOT NULL,
-  `username` varchar(50) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `password_hash` varchar(255) NOT NULL,
+  `username` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `email` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `password_hash` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
   `weight_kg` float DEFAULT NULL,
   `height_cm` int DEFAULT NULL,
-  `fitness_level` enum('Beginner','Intermediate','Advanced','Athlete') DEFAULT 'Beginner',
-  `main_goal` enum('Fat Loss','Muscle Gain','Stay Healthy','Flexibility') DEFAULT 'Stay Healthy',
-  `location_preference` enum('Home','Gym') DEFAULT 'Home',
+  `fitness_level` enum('Beginner','Intermediate','Advanced','Athlete') COLLATE utf8mb4_general_ci DEFAULT 'Beginner',
+  `main_goal` enum('Fat Loss','Muscle Gain','Stay Healthy','Flexibility') COLLATE utf8mb4_general_ci DEFAULT 'Stay Healthy',
+  `location_preference` enum('Home','Gym') COLLATE utf8mb4_general_ci DEFAULT 'Home',
   `target_sessions_per_week` int DEFAULT '3',
   `preferred_duration_minutes` int DEFAULT '45',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
@@ -125,11 +125,11 @@ INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `weight_kg`, `h
 CREATE TABLE `user_busy_times` (
   `id` int NOT NULL,
   `user_id` int NOT NULL,
-  `day_of_week` enum('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday') NOT NULL,
+  `day_of_week` enum('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday') COLLATE utf8mb4_general_ci NOT NULL,
   `start_time` time DEFAULT NULL,
   `end_time` time DEFAULT NULL,
   `is_full_day` tinyint(1) DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `user_busy_times`
@@ -153,7 +153,7 @@ CREATE TABLE `user_logs` (
   `actual_duration_minutes` int DEFAULT NULL,
   `calories_burned` int DEFAULT NULL,
   `rating` int DEFAULT NULL,
-  `feedback_text` text
+  `feedback_text` text COLLATE utf8mb4_general_ci
 ) ;
 
 --
