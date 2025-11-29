@@ -3,9 +3,10 @@ uvicorn
 sqlalchemy
 pymysql
 python-dotenv
-pydantic
+pydantic[email]
 cryptography
 google-generativeai
 passlib[bcrypt]
 python-jose[cryptography]
 multipart
+bcrypt==4.0.1

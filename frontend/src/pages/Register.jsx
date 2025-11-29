@@ -14,7 +14,7 @@ export default function Register() {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post('http://127.0.0.1:8000/register', { username, email, password });
+      await axios.post('http://127.0.0.1:8000/api/v1/register', { username, email, password });
       alert("Registrasi Berhasil! Silakan Login.");
       navigate('/login');
     } catch (error) {

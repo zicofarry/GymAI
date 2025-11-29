@@ -69,7 +69,7 @@ export default function CreateSchedule() {
 
       // 3. Kirim Request ke Backend dengan Header Auth
       const response = await axios.post(
-        'http://127.0.0.1:8000/generate-schedule', 
+        'http://127.0.0.1:8000/api/v1/schedules/generate', 
         payload,
         {
           headers: {
