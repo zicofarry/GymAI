@@ -13,44 +13,25 @@ from app.services import csp_service, user_service, schedule_service
 
 router = APIRouter()
 
-# --- HELPER FUNCTION: DINAMIS & PERSONALIZED ---
+# --- Helper Mapping (Sama) ---
 def map_to_response(items, user: User):
-    """
-    Mengubah data database menjadi response JSON.
-    Melakukan perhitungan dinamis berdasarkan PROFIL USER (Berat & Level).
-    """
     response_items = []
-    
-    # Faktor Pengali Kalori (Asumsi base di DB untuk orang 70kg)
-    # Jika user berat 140kg, kalori x2. Jika 35kg, kalori x0.5.
     weight_factor = (user.weight_kg or 70) / 70.0
     
-    # Faktor Penambah Set berdasarkan Level
-    # Beginner: +0, Intermediate: +1, Advanced: +2, Athlete: +3
     level_bonus_sets = {
-        "Beginner": 0,
-        "Intermediate": 1,
-        "Advanced": 2,
-        "Athlete": 3
-    }.get(user.fitness_level.value if hasattr(user.fitness_level, 'value') else user.fitness_level, 0)
+        "Beginner": 0, "Intermediate": 1, "Advanced": 2, "Athlete": 3
+    }.get(user.fitness_level.value if hasattr(user.fitness_level, 'value') else str(user.fitness_level), 0)
 
     for item in items:
         ex = item.exercise
         muscle_val = ex.muscle_group.value if hasattr(ex.muscle_group, 'value') else str(ex.muscle_group)
         
-        # 1. Ambil Default dari Library
         base_sets = getattr(ex, 'default_sets', 3) or 3
         base_reps = getattr(ex, 'default_reps', '12') or '12'
         rest = getattr(ex, 'rest_seconds', 60) or 60
         base_calories = getattr(ex, 'calories_burn_estimate', 50) or 50
         
-        # 2. Lakukan Personalisasi (Matematika Sederhana)
-        # Hitung Sets Final
         final_sets = base_sets + level_bonus_sets
-        
-        # Hitung Kalori Final (Base * WeightFactor * Ratio Durasi)
-        # Kita asumsikan base_calories itu untuk durasi default. 
-        # Jika jadwal CSP memberi durasi lebih lama/pendek, kalori menyesuaikan.
         duration_ratio = item.duration_minutes / (ex.default_duration_minutes or 10)
         final_calories = int(base_calories * weight_factor * duration_ratio)
 
@@ -63,17 +44,16 @@ def map_to_response(items, user: User):
             muscle_group=muscle_val,
             tips=item.ai_custom_tips or "Keep pushing!",
             is_completed=item.is_completed,
-            
-            # Data Personal
             sets=final_sets,
-            reps=base_reps,     # Reps biasanya standar, tapi Sets yang main volume
+            reps=base_reps,
             rest=rest,
-            calories=final_calories # Kalori sudah disesuaikan berat badan
+            calories=final_calories
         ))
     return response_items
 
+# --- ENDPOINT ASYNC ---
 @router.post("/generate", response_model=ScheduleResponse)
-def generate_schedule(
+async def generate_schedule(  # <-- Tambah async
     user_input: UserProfileInput,
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_user)
@@ -94,16 +74,15 @@ def generate_schedule(
     if not generated_plan:
          raise HTTPException(status_code=400, detail="Gagal membuat jadwal.")
 
-    # 4. Simpan ke DB
-    motivation = f"Halo {current_user.username}, ayo semangat!"
-    saved_schedule = schedule_service.save_generated_schedule(
-        db, current_user.id, generated_plan, motivation
+    # 4. Simpan ke DB (PAKAI AWAIT)
+    saved_schedule = await schedule_service.save_generated_schedule(
+        db, current_user, generated_plan
     )
 
-    # 5. Return Response (Pass current_user ke fungsi mapping)
+    # 5. Return Response
     return ScheduleResponse(
-        motivation=motivation,
-        schedule=map_to_response(saved_schedule.items, current_user) # <-- Passing User
+        motivation=saved_schedule.ai_weekly_motivation,
+        schedule=map_to_response(saved_schedule.items, current_user)
     )
 
 @router.get("/my-schedule", response_model=ScheduleResponse)
@@ -119,10 +98,9 @@ def get_my_schedule(
     if not schedule:
         raise HTTPException(status_code=404, detail="Belum ada jadwal aktif.")
     
-    # Pass current_user ke fungsi mapping
     return ScheduleResponse(
         motivation=schedule.ai_weekly_motivation or "Welcome back!",
-        schedule=map_to_response(schedule.items, current_user) # <-- Passing User
+        schedule=map_to_response(schedule.items, current_user)
     )
 
 @router.post("/items/{item_id}/toggle")
@@ -132,11 +110,8 @@ def toggle_item_status(
     current_user: User = Depends(deps.get_current_user)
 ):
     item = db.query(ScheduleItem).filter(ScheduleItem.id == item_id).first()
-    if not item:
-        raise HTTPException(status_code=404, detail="Item tidak ditemukan")
-    
-    if item.schedule.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Bukan jadwal milikmu")
+    if not item: raise HTTPException(status_code=404, detail="Item tidak ditemukan")
+    if item.schedule.user_id != current_user.id: raise HTTPException(status_code=403, detail="Bukan milikmu")
 
     if item.is_completed:
         item.is_completed = False
@@ -145,8 +120,7 @@ def toggle_item_status(
         message = "Status dibatalkan."
     else:
         item.is_completed = True
-        
-        # Hitung kalori REAL (sesuai berat badan saat ini)
+        # Hitung kalori real
         weight_factor = (current_user.weight_kg or 70) / 70.0
         base_calories = getattr(item.exercise, 'calories_burn_estimate', 50) or 50
         duration_ratio = item.duration_minutes / (item.exercise.default_duration_minutes or 10)
@@ -156,7 +130,7 @@ def toggle_item_status(
             user_id=current_user.id,
             schedule_item_id=item.id,
             actual_duration_minutes=item.duration_minutes,
-            calories_burned=real_calories, # <-- Simpan kalori yg akurat
+            calories_burned=real_calories,
             rating=5,
             feedback_text="Selesai via Checklist UI"
         )

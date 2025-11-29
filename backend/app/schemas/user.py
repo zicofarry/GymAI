@@ -58,3 +58,4 @@ class UserProfileResponse(BaseModel):
     # Stats Tracker
     stats: UserStats
     recent_activity: List[UserActivityLog]
+    weekly_report_text: str = "Belum ada laporan minggu ini."
