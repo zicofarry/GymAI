@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Nov 29, 2025 at 01:29 PM
+-- Generation Time: Nov 29, 2025 at 02:27 PM
 -- Server version: 8.4.3
 -- PHP Version: 8.3.26
 
@@ -36,20 +36,23 @@ CREATE TABLE `exercise_library` (
   `difficulty_level` enum('Beginner','Intermediate','Advanced') COLLATE utf8mb4_general_ci DEFAULT 'Beginner',
   `default_duration_minutes` int DEFAULT '10',
   `calories_burn_estimate` int DEFAULT NULL,
-  `description` text COLLATE utf8mb4_general_ci
+  `description` text COLLATE utf8mb4_general_ci,
+  `default_sets` int DEFAULT '3',
+  `default_reps` varchar(50) COLLATE utf8mb4_general_ci DEFAULT '10-12',
+  `rest_seconds` int DEFAULT '60'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `exercise_library`
 --
 
-INSERT INTO `exercise_library` (`id`, `name`, `category`, `muscle_group`, `equipment_type`, `difficulty_level`, `default_duration_minutes`, `calories_burn_estimate`, `description`) VALUES
-(1, 'Push Up', 'Strength', 'Chest', 'None', 'Beginner', 10, NULL, 'Latihan dasar dada'),
-(2, 'Bodyweight Squat', 'Strength', 'Legs', 'None', 'Beginner', 10, NULL, 'Latihan dasar kaki'),
-(3, 'Plank', 'Strength', 'Core', 'None', 'Beginner', 5, NULL, 'Menahan posisi lurus'),
-(4, 'Jumping Jacks', 'Cardio', 'Full Body', 'None', 'Beginner', 15, NULL, 'Latihan kardio ringan'),
-(5, 'Dumbbell Bench Press', 'Strength', 'Chest', 'Dumbbell', 'Intermediate', 15, NULL, 'Latihan dada dengan beban'),
-(6, 'Treadmill Run', 'Cardio', 'Cardio', 'Machine', 'Beginner', 30, NULL, 'Lari statis');
+INSERT INTO `exercise_library` (`id`, `name`, `category`, `muscle_group`, `equipment_type`, `difficulty_level`, `default_duration_minutes`, `calories_burn_estimate`, `description`, `default_sets`, `default_reps`, `rest_seconds`) VALUES
+(1, 'Push Up', 'Strength', 'Chest', 'None', 'Beginner', 10, 45, 'Latihan dasar dada', 3, '10-15', 60),
+(2, 'Bodyweight Squat', 'Strength', 'Legs', 'None', 'Beginner', 10, 60, 'Latihan dasar kaki', 4, '15-20', 60),
+(3, 'Plank', 'Strength', 'Core', 'None', 'Beginner', 5, 30, 'Menahan posisi lurus', 3, '45-60 sec', 45),
+(4, 'Jumping Jacks', 'Cardio', 'Full Body', 'None', 'Beginner', 15, 80, 'Latihan kardio ringan', 3, '60 sec', 30),
+(5, 'Dumbbell Bench Press', 'Strength', 'Chest', 'Dumbbell', 'Intermediate', 15, 70, 'Latihan dada dengan beban', 3, '8-12', 90),
+(6, 'Treadmill Run', 'Cardio', 'Cardio', 'Machine', 'Beginner', 30, 250, 'Lari statis', 1, '30 min', 0);
 
 -- --------------------------------------------------------
 
@@ -95,7 +98,14 @@ INSERT INTO `schedules` (`id`, `user_id`, `start_date`, `end_date`, `is_active`,
 (21, 2, '2025-11-30', '2025-12-06', 0, 'Jadwal diperbarui otomatis untuk zicofarry (via Chatbot)', '2025-11-29 13:24:33'),
 (22, 2, '2025-11-30', '2025-12-06', 0, 'Jadwal diperbarui otomatis untuk zicofarry (via Chatbot)', '2025-11-29 13:25:02'),
 (23, 2, '2025-11-30', '2025-12-06', 0, 'Jadwal diperbarui otomatis untuk zicofarry (via Chatbot)', '2025-11-29 13:25:02'),
-(24, 2, '2025-11-30', '2025-12-06', 1, 'Jadwal diperbarui otomatis untuk zicofarry (via Chatbot)', '2025-11-29 13:25:02');
+(24, 2, '2025-11-30', '2025-12-06', 0, 'Jadwal diperbarui otomatis untuk zicofarry (via Chatbot)', '2025-11-29 13:25:02'),
+(25, 2, '2025-11-30', '2025-12-06', 0, 'Jadwal diperbarui otomatis untuk zicofarry (via Chatbot)', '2025-11-29 13:40:58'),
+(26, 2, '2025-11-30', '2025-12-06', 0, 'Jadwal diperbarui otomatis untuk zicofarry (via Chatbot)', '2025-11-29 13:40:58'),
+(27, 2, '2025-11-30', '2025-12-06', 0, 'Jadwal diperbarui otomatis untuk zicofarry (via Chatbot)', '2025-11-29 13:40:58'),
+(28, 2, '2025-11-30', '2025-12-06', 0, 'Jadwal diperbarui otomatis untuk zicofarry (via Chatbot)', '2025-11-29 13:40:58'),
+(29, 2, '2025-11-30', '2025-12-06', 0, 'Jadwal diperbarui otomatis untuk zicofarry (via Chatbot)', '2025-11-29 13:40:59'),
+(30, 2, '2025-11-30', '2025-12-06', 0, 'Jadwal diperbarui otomatis untuk zicofarry (via Chatbot)', '2025-11-29 13:40:59'),
+(31, 2, '2025-11-30', '2025-12-06', 1, 'Halo zicofarry, ayo semangat!', '2025-11-29 14:26:24');
 
 -- --------------------------------------------------------
 
@@ -207,7 +217,42 @@ INSERT INTO `schedule_items` (`id`, `schedule_id`, `exercise_id`, `day_of_week`,
 (86, 24, 5, 'Tuesday', '20:00:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
 (87, 24, 5, 'Wednesday', '20:00:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
 (88, 24, 5, 'Thursday', '20:00:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
-(89, 24, 5, 'Sunday', '20:00:00', 15, 0, 'Focus on form for Dumbbell Bench Press');
+(89, 24, 5, 'Sunday', '20:00:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
+(90, 25, 5, 'Tuesday', '20:00:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
+(91, 25, 3, 'Tuesday', '20:20:00', 5, 0, 'Focus on form for Plank'),
+(92, 25, 5, 'Wednesday', '20:00:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
+(93, 25, 6, 'Wednesday', '20:20:00', 30, 0, 'Focus on form for Treadmill Run'),
+(94, 25, 5, 'Thursday', '20:00:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
+(95, 25, 5, 'Sunday', '20:00:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
+(96, 26, 5, 'Wednesday', '20:00:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
+(97, 26, 3, 'Wednesday', '20:20:00', 5, 0, 'Focus on form for Plank'),
+(98, 26, 5, 'Thursday', '20:00:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
+(99, 26, 6, 'Thursday', '20:20:00', 30, 0, 'Focus on form for Treadmill Run'),
+(100, 26, 5, 'Sunday', '20:00:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
+(101, 26, 3, 'Sunday', '20:20:00', 5, 0, 'Focus on form for Plank'),
+(102, 27, 5, 'Thursday', '20:00:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
+(103, 27, 3, 'Thursday', '20:20:00', 5, 0, 'Focus on form for Plank'),
+(104, 27, 5, 'Thursday', '20:30:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
+(105, 27, 5, 'Sunday', '20:00:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
+(106, 27, 6, 'Sunday', '20:20:00', 30, 0, 'Focus on form for Treadmill Run'),
+(107, 28, 5, 'Sunday', '20:00:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
+(108, 28, 3, 'Sunday', '20:20:00', 5, 0, 'Focus on form for Plank'),
+(109, 28, 5, 'Sunday', '20:30:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
+(110, 28, 3, 'Sunday', '20:50:00', 5, 0, 'Focus on form for Plank'),
+(111, 29, 5, 'Sunday', '20:00:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
+(112, 29, 3, 'Sunday', '20:20:00', 5, 0, 'Focus on form for Plank'),
+(113, 29, 5, 'Sunday', '20:30:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
+(114, 29, 3, 'Sunday', '20:50:00', 5, 0, 'Focus on form for Plank'),
+(115, 30, 5, 'Sunday', '20:00:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
+(116, 30, 3, 'Sunday', '20:20:00', 5, 0, 'Focus on form for Plank'),
+(117, 30, 5, 'Sunday', '20:30:00', 15, 0, 'Focus on form for Dumbbell Bench Press'),
+(118, 30, 3, 'Sunday', '20:50:00', 5, 0, 'Focus on form for Plank'),
+(119, 31, 2, 'Saturday', '20:00:00', 10, 0, 'Focus on form for Bodyweight Squat'),
+(120, 31, 3, 'Saturday', '20:15:00', 5, 0, 'Focus on form for Plank'),
+(121, 31, 2, 'Saturday', '20:25:00', 10, 0, 'Focus on form for Bodyweight Squat'),
+(122, 31, 2, 'Sunday', '20:00:00', 10, 0, 'Focus on form for Bodyweight Squat'),
+(123, 31, 3, 'Sunday', '20:15:00', 5, 0, 'Focus on form for Plank'),
+(124, 31, 2, 'Sunday', '20:25:00', 10, 0, 'Focus on form for Bodyweight Squat');
 
 -- --------------------------------------------------------
 
@@ -238,7 +283,7 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `weight_kg`, `height_cm`, `fitness_level`, `main_goal`, `location_preference`, `target_sessions_per_week`, `preferred_duration_minutes`, `created_at`, `updated_at`, `preferred_workout_time`) VALUES
 (1, 'azmi_dev', 'azmi@gymai.com', 'dummy_hashed_password_123', 70, 175, 'Beginner', 'Muscle Gain', 'Home', 3, 45, '2025-11-29 04:33:54', '2025-11-29 04:33:54', 'Anytime'),
-(2, 'zicofarry', 'zicofarry@gmail.com', '$2b$12$Aq4yAyAEJga6CLNkFVP35uDAL7YM89vYZkxNyQMyeRXL8oynfUZYO', 45, 165, 'Intermediate', 'Muscle Gain', 'Gym', 6, 45, '2025-11-29 05:46:24', '2025-11-29 13:03:49', 'Night'),
+(2, 'zicofarry', 'zicofarry@gmail.com', '$2b$12$Aq4yAyAEJga6CLNkFVP35uDAL7YM89vYZkxNyQMyeRXL8oynfUZYO', 45, 165, 'Intermediate', 'Muscle Gain', 'Home', 6, 45, '2025-11-29 05:46:24', '2025-11-29 14:26:24', 'Night'),
 (3, 'tes', 'tes@gmail.com', '$2b$12$SePXmDW5gggFbjJbDefF2Ohm0HHKlQw5KdK2vdR39ud13Y3onTIg.', NULL, NULL, NULL, NULL, NULL, 3, 45, '2025-11-29 06:16:52', '2025-11-29 06:16:52', 'Anytime'),
 (4, 'raffa', 'raffa@gmail.com', '$2b$12$xCXQEd4Yr9tTN0OFe1wdo.KoG96/XCU3YAag5Pkok.IkxE3CfJI5S', 35, 145, 'Intermediate', 'Stay Healthy', 'Home', 3, 45, '2025-11-29 06:29:01', '2025-11-29 09:15:31', 'Anytime'),
 (5, 'demo1', 'demo1@gmail.com', '$2b$12$Od3e53apsZso/QiMFh.re.Ut0AfX7bcg7iHiWC4iDXjztxlZPzduC', 55, 170, 'Beginner', 'Fat Loss', 'Home', 4, 45, '2025-11-29 09:23:21', '2025-11-29 10:09:17', 'Anytime');
@@ -268,10 +313,11 @@ INSERT INTO `user_busy_times` (`id`, `user_id`, `day_of_week`, `start_time`, `en
 (6, 4, 'Monday', '21:02:00', '12:21:00', 0),
 (7, 4, 'Wednesday', NULL, NULL, 1),
 (21, 5, 'Monday', NULL, NULL, 1),
-(55, 2, 'Friday', NULL, NULL, 1),
-(56, 2, 'Saturday', NULL, NULL, 1),
-(57, 2, 'Saturday', NULL, NULL, 1),
-(58, 2, 'Saturday', NULL, NULL, 1);
+(67, 2, 'Monday', NULL, NULL, 1),
+(68, 2, 'Tuesday', NULL, NULL, 1),
+(69, 2, 'Wednesday', NULL, NULL, 1),
+(70, 2, 'Thursday', NULL, NULL, 1),
+(71, 2, 'Friday', NULL, NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -291,8 +337,9 @@ CREATE TABLE `user_injuries` (
 --
 
 INSERT INTO `user_injuries` (`id`, `user_id`, `muscle_group`, `created_at`) VALUES
-(8, 2, 'Legs', '2025-11-29 20:03:49'),
-(9, 2, 'Shoulders', '2025-11-29 20:03:49');
+(10, 2, 'Shoulders', '2025-11-29 21:26:24'),
+(11, 2, 'Chest', '2025-11-29 21:26:24'),
+(12, 2, 'Arms', '2025-11-29 21:26:24');
 
 -- --------------------------------------------------------
 
@@ -388,13 +435,13 @@ ALTER TABLE `exercise_library`
 -- AUTO_INCREMENT for table `schedules`
 --
 ALTER TABLE `schedules`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT for table `schedule_items`
 --
 ALTER TABLE `schedule_items`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=90;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=125;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -406,13 +453,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `user_busy_times`
 --
 ALTER TABLE `user_busy_times`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
 
 --
 -- AUTO_INCREMENT for table `user_injuries`
 --
 ALTER TABLE `user_injuries`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `user_logs`
