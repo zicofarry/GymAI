@@ -157,6 +157,43 @@ export default function ScheduleResult() {
                       <TrendingUp size={16} className={item.is_completed ? "text-green-600" : "text-brand-red"} /> 
                       <span>{item.muscle_group}</span>
                     </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                      {/* Waktu */}
+                      <div className="bg-gray-50 p-2 rounded-lg flex items-center gap-2 border border-gray-100">
+                          <Clock size={16} className="text-blue-500" />
+                          <div>
+                              <p className="text-[10px] text-gray-400 font-bold uppercase">Time</p>
+                              <p className="font-semibold text-gray-700">{item.time} ({item.duration}m)</p>
+                          </div>
+                      </div>
+
+                      {/* Kalori */}
+                      <div className="bg-gray-50 p-2 rounded-lg flex items-center gap-2 border border-gray-100">
+                          <Zap size={16} className="text-orange-500" />
+                          <div>
+                              <p className="text-[10px] text-gray-400 font-bold uppercase">Burn</p>
+                              <p className="font-semibold text-gray-700">~{item.calories} kkal</p>
+                          </div>
+                      </div>
+
+                      {/* Sets & Reps (Full Width) */}
+                      <div className="col-span-2 bg-gray-900 text-white p-3 rounded-xl flex justify-between items-center shadow-sm">
+                          <div className="flex flex-col">
+                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Sets</span>
+                              <span className="text-lg font-black font-mono">{item.sets}</span>
+                          </div>
+                          <div className="h-8 w-px bg-gray-700"></div>
+                          <div className="flex flex-col items-center">
+                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Reps / Time</span>
+                              <span className="text-lg font-black font-mono">{item.reps}</span>
+                          </div>
+                          <div className="h-8 w-px bg-gray-700"></div>
+                          <div className="flex flex-col items-end">
+                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Rest</span>
+                              <span className="text-lg font-black font-mono">{item.rest}s</span>
+                          </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* TIPS (Hilang kalau sudah selesai biar bersih) */}

@@ -10,6 +10,12 @@ class ScheduleItemResponse(BaseModel):
     muscle_group: str
     tips: str
     is_completed: bool
+    
+    # BARU: Detail Latihan
+    sets: int
+    reps: str
+    rest: int
+    calories: int
 
 class ScheduleResponse(BaseModel):
     motivation: str

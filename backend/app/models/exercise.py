@@ -10,6 +10,13 @@ class Exercise(Base):
     muscle_group = Column(Enum('Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Full Body', 'Cardio'))
     equipment_type = Column(Enum('None', 'Dumbbell', 'Barbell', 'Machine', 'Resistance Band'))
     difficulty_level = Column(Enum('Beginner', 'Intermediate', 'Advanced'))
-    default_duration_minutes = Column(Integer)
-    calories_burn_estimate = Column(Integer)
+    
+    # Durasi total estimasi (termasuk istirahat)
+    default_duration_minutes = Column(Integer) 
+    calories_burn_estimate = Column(Integer) # Kalori per sesi standar
     description = Column(Text)
+    
+    # BARU: Detail Teknis Default
+    default_sets = Column(Integer, default=3)
+    default_reps = Column(String(50), default="10-12") # String karena bisa "12" atau "30 sec"
+    rest_seconds = Column(Integer, default=60)
