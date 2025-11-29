@@ -14,7 +14,7 @@
 
 3. Import database
    
-   import file backend/db/gymai.sql ke mysql kalian, pastikan servernya sudah dijalankan
+   import file dari database/gymai.sql ke mysql kalian, pastikan servernya sudah dijalankan
 
 4. Jalankan server backend
    ```
