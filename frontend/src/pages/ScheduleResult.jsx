@@ -13,7 +13,7 @@ const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 // --- MODAL KEGAGALAN/INFO (REUSABLE) ---
 const FailureModal = ({ title, message, onClose, actionButton, actionLink }) => (
     <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-space transition-opacity duration-300">
-        <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center border-2 border-red-200 ring-4 ring-red-500/20 transform scale-105">
+        <div className="bg-white p-8 rounded-3xl shadow-md w-full max-w-sm text-center border-2 border-red-200 ring-4 ring-red-500/20 transform scale-105">
             <AlertTriangle size={48} className="text-brand-red mx-auto mb-4" strokeWidth={2.5}/>
             <h3 className="text-2xl font-bold text-gray-900 mb-2">{title}</h3>
             <p className="text-gray-600 mb-6">{message}</p>
@@ -144,17 +144,23 @@ export default function ScheduleResult() {
       
       <div className="max-w-4xl mx-auto px-4 py-10 pt-28">
         
-        {/* HEADER MOTIVATION (Redesign Match) */}
+        {/* HEADER MOTIVATION (Redesign: Lebih Premium) */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center p-3 bg-green-100 text-green-600 rounded-full mb-4 shadow-sm">
-            <Award size={32} strokeWidth={3} />
-          </div>
-          <h1 className="text-4xl font-black text-gray-900 mb-4 tracking-tight">
-            Your <span className="text-brand-red">Protocol</span> is Active
-          </h1>
-          <div className="bg-white p-4 rounded-xl shadow-md border border-gray-100 max-w-xl mx-auto">
-            <p className="text-gray-700 italic font-medium">"{result.motivation}"</p>
-          </div>
+            
+            {/* Tag Status */}
+            <div className="inline-flex items-center justify-center p-2 bg-green-100 text-green-600 rounded-xl mb-4 shadow-sm border border-green-200">
+                <Award size={20} strokeWidth={2.5} className="mr-2"/>
+                <span className="text-sm font-bold uppercase">Protocol Active</span>
+            </div>
+            
+            <h1 className="text-4xl font-black text-gray-900 mb-4 tracking-tight">
+                Your <span className="text-brand-red">Workout Plan</span>
+            </h1>
+            
+            {/* Quote Container (OUTLINE HIJAU DIHAPUS) */}
+            <div className="bg-white p-5 rounded-2xl shadow-md border border-gray-100 max-w-xl mx-auto">
+                <p className="text-gray-700 italic font-medium text-lg">"{result.motivation}"</p>
+            </div>
         </div>
 
         {/* LIST JADWAL (Redesign Cards) */}
@@ -162,19 +168,20 @@ export default function ScheduleResult() {
             {result.schedule.map((item) => (
               <div 
                 key={item.id} 
-                className={`rounded-3xl p-6 shadow-xl border transition-all duration-300 relative group overflow-hidden ${
+                // Shadow diubah ke shadow-md dan hover:shadow-md
+                className={`rounded-3xl p-6 shadow-md border transition-all duration-300 relative group overflow-hidden ${
                     item.is_completed 
-                    ? 'bg-green-50/80 border-green-200 opacity-80' 
-                    : 'bg-white border-gray-100 hover:shadow-2xl hover:-translate-y-0.5'
+                    ? 'bg-green-50/80 border-green-200 opacity-90' 
+                    : 'bg-white border-gray-100 hover:shadow-md hover:-translate-y-0.5' 
                 }`}
               >
                 {/* Background Icon */}
                 <Dumbbell className={`absolute -right-4 -bottom-4 opacity-50 transition transform ${item.is_completed ? 'text-green-200' : 'text-gray-100 group-hover:rotate-6'}`} size={100} />
 
                 {/* HEADER CARD */}
-                <div className="flex justify-between items-center mb-4 relative z-10">
-                  <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest ${
-                      item.is_completed ? 'bg-green-600 text-white' : 'bg-brand-red text-white'
+                <div className="flex justify-between items-start mb-4 relative z-10">
+                  <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${
+                      item.is_completed ? 'bg-green-600 text-white' : 'bg-brand-red text-white shadow-sm'
                   }`}>
                     {item.day}
                   </div>
@@ -185,7 +192,7 @@ export default function ScheduleResult() {
                     disabled={updatingId === item.id}
                     className={`p-2 rounded-full transition-all shadow-sm ${
                         item.is_completed
-                        ? 'bg-white text-green-600 hover:bg-red-100 hover:text-red-500 border border-green-200'
+                        ? 'bg-green-100 text-green-600 hover:bg-red-100 hover:text-red-500 border border-green-200'
                         : 'bg-gray-100 text-gray-400 hover:bg-green-100 hover:text-green-600 border border-transparent'
                     }`}
                     title={item.is_completed ? "Undo (Batalkan)" : "Mark as Done"}
@@ -211,51 +218,46 @@ export default function ScheduleResult() {
                     {item.exercise_name}
                   </h3>
                   
+                  {/* DETAIL BLOCKS (Disederhanakan) */}
                   <div className="flex flex-col gap-2 mt-4 text-sm text-gray-600 font-medium">
-                    <div className="flex items-center gap-2">
-                      <Clock size={16} className={item.is_completed ? "text-green-600" : "text-gray-400"} /> 
-                      <span>{item.time} | {item.duration} minutes</span>
+                      
+                    {/* Time & Duration (Blok Utama) */}
+                    <div className="bg-gray-50 p-2 rounded-lg flex items-center justify-between border border-gray-100">
+                        <div className="flex items-center gap-2">
+                            <Clock size={16} className="text-blue-500" /> 
+                            <span className='font-bold text-gray-700'>{item.time}</span>
+                        </div>
+                        <span className="text-xs font-semibold bg-gray-200 px-2 py-0.5 rounded-full text-gray-600">{item.duration} min</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <TrendingUp size={16} className={item.is_completed ? "text-green-600" : "text-brand-red"} /> 
-                      <span className='font-bold'>{item.muscle_group}</span>
+
+                    {/* Muscle Group & Calories (Blok Pendamping) */}
+                    <div className='grid grid-cols-2 gap-2'>
+                        <div className="bg-gray-50 p-2 rounded-lg flex items-center gap-2 border border-gray-100">
+                            <TrendingUp size={16} className="text-brand-red" />
+                            <p className="text-sm font-semibold text-gray-700">{item.muscle_group}</p>
+                        </div>
+                        <div className="bg-gray-50 p-2 rounded-lg flex items-center gap-2 border border-gray-100">
+                            <Zap size={16} className="text-orange-500" />
+                            <p className="text-sm font-semibold text-gray-700">~{item.calories} kkal</p>
+                        </div>
                     </div>
-                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                      {/* Waktu */}
-                      <div className="bg-gray-50 p-2 rounded-lg flex items-center gap-2 border border-gray-100">
-                          <Clock size={16} className="text-blue-500" />
-                          <div>
-                              <p className="text-[10px] text-gray-400 font-bold uppercase">Time</p>
-                              <p className="font-semibold text-gray-700">{item.time} ({item.duration}m)</p>
-                          </div>
-                      </div>
 
-                      {/* Kalori */}
-                      <div className="bg-gray-50 p-2 rounded-lg flex items-center gap-2 border border-gray-100">
-                          <Zap size={16} className="text-orange-500" />
-                          <div>
-                              <p className="text-[10px] text-gray-400 font-bold uppercase">Burn</p>
-                              <p className="font-semibold text-gray-700">~{item.calories} kkal</p>
-                          </div>
-                      </div>
-
-                      {/* Sets & Reps (Full Width) */}
-                      <div className="col-span-2 bg-gray-900 text-white p-3 rounded-xl flex justify-between items-center shadow-sm">
-                          <div className="flex flex-col">
-                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Sets</span>
-                              <span className="text-lg font-black font-mono">{item.sets}</span>
-                          </div>
-                          <div className="h-8 w-px bg-gray-700"></div>
-                          <div className="flex flex-col items-center">
-                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Reps / Time</span>
-                              <span className="text-lg font-black font-mono">{item.reps}</span>
-                          </div>
-                          <div className="h-8 w-px bg-gray-700"></div>
-                          <div className="flex flex-col items-end">
-                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Rest</span>
-                              <span className="text-lg font-black font-mono">{item.rest}s</span>
-                          </div>
-                      </div>
+                    {/* Sets & Reps Block */}
+                    <div className="col-span-2 bg-gray-100 text-gray-900 p-3 rounded-xl flex justify-between items-center shadow-inner mt-3 border border-gray-200">
+                        <div className="flex flex-col items-center">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Sets</span>
+                            <span className="text-lg font-black font-mono text-gray-900">{item.sets}</span>
+                        </div>
+                        <div className="h-8 w-px bg-gray-300"></div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Reps / Time</span>
+                            <span className="text-lg font-black font-mono text-gray-900">{item.reps}</span>
+                        </div>
+                        <div className="h-8 w-px bg-gray-300"></div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Rest</span>
+                            <span className="text-lg font-black font-mono text-gray-900">{item.rest}s</span>
+                        </div>
                     </div>
                   </div>
 
@@ -263,7 +265,7 @@ export default function ScheduleResult() {
                   {!item.is_completed && (
                       <div className="mt-4 bg-blue-50 p-3 rounded-xl border border-blue-100 shadow-sm">
                         <p className="text-xs text-blue-800">
-                          <strong className="block mb-1">💡 Tip:</strong> {item.tips}
+                          <strong className="block mb-1">💡 Coach Tip:</strong> {item.tips}
                         </p>
                       </div>
                   )}
@@ -283,7 +285,7 @@ export default function ScheduleResult() {
            
            <button 
              onClick={() => window.print()} 
-             className="px-8 py-3 bg-gray-900 text-white font-bold rounded-xl shadow-xl hover:shadow-gray-700 hover:bg-black transition flex items-center gap-2 hover:-translate-y-0.5"
+             className="px-8 py-3 bg-gray-900 text-white font-bold rounded-xl shadow-md hover:shadow-lg hover:bg-black transition flex items-center gap-2 hover:-translate-y-0.5"
            >
              Save / Print <ArrowRight size={20} />
            </button>
