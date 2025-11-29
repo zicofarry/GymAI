@@ -7,16 +7,26 @@ export default function Register() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false); // Tambah state loading
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       await axios.post('http://127.0.0.1:8000/register', { username, email, password });
       alert("Registrasi Berhasil! Silakan Login.");
       navigate('/login');
     } catch (error) {
-      alert("Gagal register. Email mungkin sudah dipakai.");
+      console.error(error);
+      // Tampilkan pesan error spesifik dari Backend
+      if (error.response && error.response.data) {
+        alert(`Gagal Register: ${error.response.data.detail}`);
+      } else {
+        alert("Gagal Register: Tidak dapat terhubung ke server Backend.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -53,8 +63,12 @@ export default function Register() {
               />
             </div>
             
-            <button type="submit" className="w-full bg-brand-red text-white py-3 rounded-lg font-bold hover:bg-red-600 transition">
-              REGISTER
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full bg-brand-red text-white py-3 rounded-lg font-bold hover:bg-red-600 transition disabled:opacity-50"
+            >
+              {loading ? 'Processing...' : 'REGISTER'}
             </button>
           </form>
 
