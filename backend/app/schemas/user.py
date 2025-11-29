@@ -28,3 +28,33 @@ class UserProfileInput(BaseModel):
     busy_times: List[BusyTimeInput]
     preferred_workout_time: str = "Anytime" # Morning, Afternoon, Evening, Night
     injuries: List[str] = [] # List otot yang cedera, misal ["Shoulders", "Knees"]
+
+class UserStats(BaseModel):
+    total_workouts: int
+    total_minutes: int
+    total_calories: int
+    streak_days: int  # Bonus: Hitung hari berturut-turut (dummy/logic)
+
+class UserActivityLog(BaseModel):
+    id: int
+    date: str
+    exercise_name: str
+    duration: int
+    calories: int
+    rating: Optional[int] = None
+
+class UserProfileResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    
+    # Data Fisik
+    weight: float
+    height: int
+    fitness_level: str
+    goal: str
+    location: str
+    
+    # Stats Tracker
+    stats: UserStats
+    recent_activity: List[UserActivityLog]

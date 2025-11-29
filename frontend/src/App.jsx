@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ChatWidget from './components/ChatWidget';
 import ScheduleRouter from './pages/ScheduleRouter'; 
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         {/* RUTE TUJUAN (Accessed via ScheduleRouter) */}
         <Route path="/create" element={<CreateSchedule />} />
         <Route path="/result" element={<ScheduleResult />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </Router>
   );

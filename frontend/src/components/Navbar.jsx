@@ -121,20 +121,30 @@ export default function Navbar() {
           <div className="pl-3">
             {token ? (
               <div className="flex items-center gap-2 bg-white/80 rounded-full pl-1 pr-1 py-1 border border-white shadow-sm">
-                 <div className="flex items-center gap-2 px-3">
+                  
+                  {/* --- BAGIAN INI YANG DIUBAH --- */}
+                  {/* Nama User sekarang jadi Link ke Profile */}
+                  <NavLink 
+                    to="/profile" 
+                    className="flex items-center gap-2 px-3 hover:bg-gray-100 rounded-full transition-colors cursor-pointer py-1"
+                    title="Lihat Profile & Tracker"
+                  >
                     <div className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                     </div>
-                    <span className="text-xs font-bold text-gray-700 max-w-[80px] truncate">{username}</span>
-                 </div>
-                 {/* TOMBOL LOGOUT: Membuka modal */}
-                 <button 
-                  onClick={() => setShowLogoutModal(true)} 
-                  className="w-8 h-8 flex items-center justify-center bg-gray-50 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all hover:scale-110"
-                 >
-                   <LogOut size={14}/>
-                 </button>
+                    <span className="text-xs font-bold text-gray-700 max-w-[80px] truncate hover:text-brand-red transition-colors">
+                        {username}
+                    </span>
+                  </NavLink>
+                  {/* ------------------------------ */}
+
+                  <button 
+                   onClick={() => setShowLogoutModal(true)} 
+                   className="w-8 h-8 flex items-center justify-center bg-gray-50 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all hover:scale-110"
+                  >
+                    <LogOut size={14}/>
+                  </button>
               </div>
             ) : (
               <NavLink to="/login" className="bg-gray-900 text-white text-xs px-5 py-2.5 rounded-full font-bold hover:bg-black transition-all hover:shadow-lg hover:shadow-gray-900/20 hover:-translate-y-0.5 ml-2">
