@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.user import User, UserBusyTime
 from app.models.log import UserLog
+from app.models.schedule import Schedule, ScheduleItem
 from datetime import datetime
+from app.services import schedule_service
 
 # Konfigurasi Gemini
 genai.configure(api_key=settings.GEMINI_API_KEY)
@@ -22,7 +24,7 @@ def tool_update_profile(
     location: str = None, 
     sessions: int = None
 ):
-    """Mengupdate data profil fisik dan preferensi user secara fleksibel."""
+    """Mengupdate profil DAN me-regenerate jadwal."""
     changes = []
     
     if weight is not None:
@@ -32,49 +34,108 @@ def tool_update_profile(
     if height is not None:
         user.height_cm = height
         changes.append(f"Tinggi: {height}cm")
-        
     if goal is not None:
-        # Mapping input AI ke Enum Database (jika perlu)
-        user.main_goal = goal
+        user.main_goal = goal.title()
         changes.append(f"Goal: {goal}")
-        
     if level is not None:
-        user.fitness_level = level
+        user.fitness_level = level.title()
         changes.append(f"Level: {level}")
-        
     if location is not None:
-        user.location_preference = location
+        user.location_preference = location.title()
         changes.append(f"Lokasi: {location}")
-        
     if sessions is not None:
         user.target_sessions_per_week = sessions
-        changes.append(f"Sesi/minggu: {sessions}x")
+        changes.append(f"Sesi: {sessions}x")
 
     db.commit()
-    return f"SUKSES: Profil berhasil diupdate ({', '.join(changes)})."
+    db.refresh(user)
 
-def tool_add_busy_time(db: Session, user: User, day: str, start_time: str = None, end_time: str = None, is_full_day: bool = False):
-    """Menambahkan jadwal sibuk baru ke database."""
-    # Konversi string jam "08:00" ke object Time atau simpan string jika DB support
-    # Di sini kita simpan apa adanya, SQLAlchemy akan handle casting jika format benar (HH:MM:SS)
+    # Auto Regenerate
+    new_sched, msg = schedule_service.regenerate_schedule_from_db(db, user)
+    status_msg = "✅ Jadwal latihanmu sudah diperbarui!" if new_sched else f"⚠️ Gagal update jadwal: {msg}"
+
+    return f"SUKSES: Profil diupdate ({', '.join(changes)}). {status_msg}"
+
+def tool_manage_busy_time(
+    db: Session, 
+    user: User, 
+    day: str, 
+    action: str, # 'set_busy' atau 'set_free'
+    start_time: str = None, 
+    end_time: str = None, 
+    is_full_day: bool = False
+):
+    """
+    Menambah ATAU Menghapus waktu sibuk, lalu regenerate jadwal.
+    Bisa handle: "Senin sibuk" (add) atau "Senin jadi kosong" (remove).
+    """
+    day_capitalized = day.title() # Pastikan Monday, Tuesday, dll
     
-    new_busy = UserBusyTime(
-        user_id=user.id,
-        day_of_week=day,
-        is_full_day=is_full_day,
-        start_time=start_time + ":00" if start_time else None,
-        end_time=end_time + ":00" if end_time else None
-    )
-    db.add(new_busy)
-    db.commit()
+    if action == "set_free":
+        # HAPUS busy time di hari tersebut
+        deleted = db.query(UserBusyTime).filter(
+            UserBusyTime.user_id == user.id,
+            UserBusyTime.day_of_week == day_capitalized
+        ).delete()
+        db.commit()
+        msg_action = f"Jadwal sibuk hari {day_capitalized} DIHAPUS (Sekarang Free)."
+        
+    else: # action == "set_busy"
+        # Tambah/Update busy time (Hapus dulu yang lama di hari itu biar gak duplikat)
+        db.query(UserBusyTime).filter(
+            UserBusyTime.user_id == user.id,
+            UserBusyTime.day_of_week == day_capitalized
+        ).delete()
+        
+        new_busy = UserBusyTime(
+            user_id=user.id,
+            day_of_week=day_capitalized,
+            is_full_day=is_full_day,
+            start_time=start_time + ":00" if start_time else None,
+            end_time=end_time + ":00" if end_time else None
+        )
+        db.add(new_busy)
+        db.commit()
+        time_info = "seharian" if is_full_day else f"jam {start_time}-{end_time}"
+        msg_action = f"Jadwal sibuk hari {day_capitalized} ({time_info}) DITAMBAHKAN."
+
+    db.refresh(user)
+
+    # Auto Regenerate Jadwal
+    new_sched, msg = schedule_service.regenerate_schedule_from_db(db, user)
     
-    time_info = "seharian" if is_full_day else f"jam {start_time}-{end_time}"
-    return f"SUKSES: Jadwal sibuk hari {day} ({time_info}) berhasil ditambahkan."
+    if new_sched:
+        return f"SUKSES: {msg_action} ✅ Jadwal latihan sudah disusun ulang!"
+    else:
+        return f"SUKSES: {msg_action} ⚠️ Tapi gagal update jadwal latihan: {msg}"
 
 def tool_log_workout(db: Session, user: User, feedback: str, duration_minutes: int):
-    """Mencatat log latihan."""
+    """Log latihan & centang jadwal."""
+    today_name = datetime.now().strftime("%A")
+    
+    active_schedule = db.query(Schedule).filter(
+        Schedule.user_id == user.id,
+        Schedule.is_active == True
+    ).first()
+    
+    matched_item = None
+    schedule_info = ""
+    
+    if active_schedule:
+        target_item = db.query(ScheduleItem).filter(
+            ScheduleItem.schedule_id == active_schedule.id,
+            ScheduleItem.day_of_week == today_name,
+            ScheduleItem.is_completed == False
+        ).first()
+        
+        if target_item:
+            target_item.is_completed = True
+            matched_item = target_item
+            schedule_info = f"(Jadwal '{target_item.exercise.name}' hari ini otomatis dicentang selesai ✅)"
+
     new_log = UserLog(
         user_id=user.id,
+        schedule_item_id=matched_item.id if matched_item else None,
         actual_duration_minutes=duration_minutes,
         feedback_text=feedback,
         rating=5, 
@@ -82,12 +143,13 @@ def tool_log_workout(db: Session, user: User, feedback: str, duration_minutes: i
     )
     db.add(new_log)
     db.commit()
-    return "SUKSES: Log latihan berhasil disimpan."
+    
+    return f"SUKSES: Log latihan tercatat. {schedule_info}"
 
-# Mapping Nama Fungsi -> Fungsi Python
+# Mapping Function
 available_functions = {
     "update_profile": tool_update_profile,
-    "add_busy_time": tool_add_busy_time,
+    "manage_busy_time": tool_manage_busy_time, # <-- Nama baru
     "log_workout": tool_log_workout
 }
 
@@ -97,59 +159,53 @@ available_functions = {
 
 class ChatService:
     def __init__(self):
-        # Definisikan Schema Tools agar AI tahu cara pakainya
         self.tools_schema = [
             {
                 "function_declarations": [
                     {
                         "name": "update_profile",
-                        "description": "Gunakan tool ini untuk mengubah data fisik atau preferensi user (berat, tinggi, goal, level, lokasi, jumlah sesi).",
+                        "description": "Update data fisik/preferensi user.",
                         "parameters": {
                             "type": "OBJECT",
                             "properties": {
-                                "weight": {"type": "NUMBER", "description": "Berat badan (kg)"},
-                                "height": {"type": "INTEGER", "description": "Tinggi badan (cm)"},
-                                "goal": {
-                                    "type": "STRING", 
-                                    "description": "Main Goal. Valid values: 'Fat Loss', 'Muscle Gain', 'Stay Healthy', 'Flexibility'"
-                                },
-                                "level": {
-                                    "type": "STRING", 
-                                    "description": "Fitness Level. Valid values: 'Beginner', 'Intermediate', 'Advanced', 'Athlete'"
-                                },
-                                "location": {
-                                    "type": "STRING", 
-                                    "description": "Location Preference. Valid values: 'Home', 'Gym'"
-                                },
-                                "sessions": {"type": "INTEGER", "description": "Target sesi latihan per minggu (misal 3, 4, 5)"}
+                                "weight": {"type": "NUMBER"},
+                                "height": {"type": "INTEGER"},
+                                "goal": {"type": "STRING"},
+                                "level": {"type": "STRING"},
+                                "location": {"type": "STRING"},
+                                "sessions": {"type": "INTEGER"}
                             }
                         }
                     },
                     {
-                        "name": "add_busy_time",
-                        "description": "Gunakan tool ini jika user bilang sibuk pada hari tertentu.",
+                        "name": "manage_busy_time",
+                        "description": "Atur ketersediaan waktu user. Bisa MENAMBAH kesibukan (tidak bisa latihan) atau MENGHAPUS kesibukan (jadi bisa latihan).",
                         "parameters": {
                             "type": "OBJECT",
                             "properties": {
                                 "day": {
                                     "type": "STRING", 
-                                    "description": "Hari (English). Valid: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday"
+                                    "description": "Hari (English: Monday, Tuesday, ...)"
                                 },
-                                "start_time": {"type": "STRING", "description": "Jam mulai sibuk (Format HH:MM, contoh 09:00)"},
-                                "end_time": {"type": "STRING", "description": "Jam selesai sibuk (Format HH:MM, contoh 17:00)"},
-                                "is_full_day": {"type": "BOOLEAN", "description": "True jika sibuk seharian, False jika hanya jam tertentu"}
+                                "action": {
+                                    "type": "STRING",
+                                    "description": "Pilih 'set_busy' jika user bilang sibuk/tidak bisa. Pilih 'set_free' jika user bilang kosong/bisa/available/batal sibuk."
+                                },
+                                "start_time": {"type": "STRING"},
+                                "end_time": {"type": "STRING"},
+                                "is_full_day": {"type": "BOOLEAN"}
                             },
-                            "required": ["day"]
+                            "required": ["day", "action"]
                         }
                     },
                     {
                         "name": "log_workout",
-                        "description": "Gunakan tool ini jika user melapor SUDAH SELESAI latihan.",
+                        "description": "Lapor selesai latihan.",
                         "parameters": {
                             "type": "OBJECT",
                             "properties": {
-                                "feedback": {"type": "STRING", "description": "Kesan pesan user"},
-                                "duration_minutes": {"type": "INTEGER", "description": "Durasi latihan (menit)"}
+                                "feedback": {"type": "STRING"},
+                                "duration_minutes": {"type": "INTEGER"}
                             },
                             "required": ["feedback", "duration_minutes"]
                         }
@@ -158,7 +214,6 @@ class ChatService:
             }
         ]
         
-        # Init Model
         self.model_info = genai.GenerativeModel('gemini-2.0-flash')
         self.model_action = genai.GenerativeModel(
             model_name='gemini-2.0-flash', 
@@ -166,18 +221,13 @@ class ChatService:
         )
 
     async def process_chat(self, db: Session, user: User, message: str, mode: str):
-        """Router utama"""
         if mode == "action":
             return await self._handle_action_mode(db, user, message)
         else:
             return await self._handle_info_mode(user, message)
 
     async def _handle_info_mode(self, user: User, message: str):
-        prompt = f"""
-        Kamu adalah pelatih GymAI. User: {user.username}.
-        Jawab pertanyaan user seputar fitness dengan ramah.
-        User: {message}
-        """
+        prompt = f"Kamu Coach GymAI. User: {user.username}. Jawab: {message}"
         try:
             response = await self.model_info.generate_content_async(prompt)
             return response.text
@@ -186,32 +236,49 @@ class ChatService:
 
     async def _handle_action_mode(self, db: Session, user: User, message: str):
         chat = self.model_action.start_chat(enable_automatic_function_calling=False)
+        
+        # PROMPT INI KUNCI AGAR AI PINTAR MENERJEMAHKAN BAHASA ALAMI
         prompt = f"""
-        Tugas: Terjemahkan perintah user menjadi function call (Tool).
-        Fokus ekstrak data secara akurat.
+        Tugas: Analisis perintah user dan panggil Tool yang tepat.
+        
+        Rules untuk Waktu Sibuk:
+        - Jika user bilang "Sibuk", "Gak bisa", "Ada acara" -> action="set_busy"
+        - Jika user bilang "Kosong", "Bisa", "Available", "Gak jadi sibuk", "Free" -> action="set_free"
+        
         User: {message}
         """
         
         try:
             response = await chat.send_message_async(prompt)
-            function_call = self._get_function_call(response)
             
-            if function_call:
-                return self._execute_function(function_call, db, user)
+            # Handle Parallel Function Call (Jika user sebut banyak hari sekaligus)
+            # Gemini 2.0 bisa return list function calls
+            function_calls = self._get_function_calls(response)
+            
+            if function_calls:
+                results = []
+                for fc in function_calls:
+                    res = self._execute_function(fc, db, user)
+                    results.append(res)
+                return "\n".join(results)
             else:
-                return "Maaf, perintah tidak dikenali atau data kurang lengkap untuk update."
+                return "Maaf, saya tidak menangkap perintah data yang valid. Coba lebih spesifik."
                 
         except Exception as e:
             return f"Error Aksi: {str(e)}"
 
-    def _get_function_call(self, response):
+    def _get_function_calls(self, response):
+        """Mendukung Multiple Function Calls (Contoh: Senin dan Kamis kosong)"""
         try:
-            part = response.candidates[0].content.parts[0]
-            if part.function_call and part.function_call.name:
-                return part.function_call
-            return None
+            # Cek di candidate pertama
+            parts = response.candidates[0].content.parts
+            calls = []
+            for part in parts:
+                if part.function_call and part.function_call.name:
+                    calls.append(part.function_call)
+            return calls
         except:
-            return None
+            return []
 
     def _execute_function(self, function_call, db, user):
         fn_name = function_call.name
@@ -220,20 +287,14 @@ class ChatService:
         if fn_name in available_functions:
             func = available_functions[fn_name]
             try:
-                # Dispatcher Logic
                 if fn_name == "update_profile":
-                    # Mengirim argumen secara dinamis (kwargs)
-                    # Kita cast fn_args ke dict agar aman
                     return func(db, user, **dict(fn_args))
-                
-                elif fn_name == "add_busy_time":
+                elif fn_name == "manage_busy_time": # <-- Tool baru
                     return func(db, user, **dict(fn_args))
-                    
                 elif fn_name == "log_workout":
                     return func(db, user, fn_args["feedback"], int(fn_args["duration_minutes"]))
-                    
             except Exception as e:
-                return f"Gagal update database: {str(e)}"
+                return f"Gagal eksekusi: {str(e)}"
         
         return "Fungsi tidak valid."
 

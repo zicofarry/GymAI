@@ -19,7 +19,7 @@ class User(Base):
     location_preference = Column(Enum('Home', 'Gym'))
     target_sessions_per_week = Column(Integer, default=3)
     preferred_duration_minutes = Column(Integer, default=45)
-    
+    preferred_workout_time = Column(Enum('Morning', 'Afternoon', 'Evening', 'Night', 'Anytime'), default='Anytime')
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -27,7 +27,7 @@ class User(Base):
     # Relasi (One-to-Many)
     busy_times = relationship("UserBusyTime", back_populates="user", cascade="all, delete-orphan")
     schedules = relationship("Schedule", back_populates="user")
-
+    injuries = relationship("UserInjury", back_populates="user", cascade="all, delete-orphan")
 
 class UserBusyTime(Base):
     __tablename__ = "user_busy_times"
@@ -41,3 +41,16 @@ class UserBusyTime(Base):
     is_full_day = Column(Boolean, default=False)
 
     user = relationship("User", back_populates="busy_times")
+
+class UserInjury(Base):
+    __tablename__ = "user_injuries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    
+    # Bagian tubuh yang cedera (harus sama dengan muscle_group di exercise)
+    muscle_group = Column(Enum('Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Full Body', 'Cardio'))
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="injuries")

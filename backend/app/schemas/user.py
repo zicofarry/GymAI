@@ -26,3 +26,5 @@ class UserProfileInput(BaseModel):
     location: str
     sessions_per_week: int
     busy_times: List[BusyTimeInput]
+    preferred_workout_time: str = "Anytime" # Morning, Afternoon, Evening, Night
+    injuries: List[str] = [] # List otot yang cedera, misal ["Shoulders", "Knees"]
