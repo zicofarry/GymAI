@@ -26,7 +26,7 @@ export default function Navbar() {
           <Dumbbell size={24} />
         </div>
         <span className="text-2xl font-bold italic tracking-tighter text-gray-800">
-          GYYYM<span className="text-brand-red">AI</span>
+          GYM<span className="text-brand-red">AI</span>
         </span>
       </NavLink>
       
