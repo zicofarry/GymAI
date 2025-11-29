@@ -2,6 +2,20 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 # Input Schema (Data yang dikirim dari Frontend React)
+class UserCreate(BaseModel):
+    username: str
+    email: str
+    password: str
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    username: str
+    
 class BusyTimeInput(BaseModel):
     day: str
     is_full_day: bool
