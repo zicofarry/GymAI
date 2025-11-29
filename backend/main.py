@@ -3,16 +3,24 @@ from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base, get_db
 import models, schemas, csp_logic
+import os
+import google.generativeai as genai # Import library Google AI
 
-# Pastikan table terbuat (tapi lebih baik pakai SQL script manual di awal)
+# Load API Key
+from dotenv import load_dotenv
+load_dotenv()
+
+# Konfigurasi Gemini
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+model = genai.GenerativeModel('gemini-pro')
+
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="GymAI API")
 
-# Setup CORS agar Frontend React (beda port) bisa akses Backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Di production ganti jadi URL frontend
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -22,40 +30,53 @@ app.add_middleware(
 def read_root():
     return {"message": "GymAI Backend is Running!"}
 
+def generate_ai_tip(exercise_name, muscle_group):
+    """Fungsi helper untuk minta tips ke Gemini"""
+    try:
+        prompt = f"Berikan 1 kalimat tips singkat, padat, dan memotivasi untuk melakukan latihan '{exercise_name}' yang melatih otot {muscle_group} dalam Bahasa Indonesia."
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except Exception:
+        return f"Lakukan {exercise_name} dengan fokus penuh pada otot {muscle_group}!"
+
 @app.post("/generate-schedule", response_model=schemas.ScheduleResponse)
 def generate_schedule(user_input: schemas.UserProfileInput, db: Session = Depends(get_db)):
-    # 1. Ambil Knowledge Base Latihan
     exercises = db.query(models.Exercise).all()
     
     if not exercises:
-        # Jika tabel kosong, kasih pesan error yang jelas
         raise HTTPException(status_code=500, detail="Exercise library kosong. Harap jalankan script SQL Insert Data.")
         
-    # 2. Jalankan Logika CSP
     try:
         generated_plan = csp_logic.solve_csp_schedule(db, user_input, exercises)
     except Exception as e:
          raise HTTPException(status_code=500, detail=f"Error algoritma: {str(e)}")
     
-    # 3. Format Output untuk React
     response_items = []
+    
+    # Generate Motivation Sekali Saja untuk Header
+    try:
+        motivation_prompt = f"Buat 1 kalimat semangat pendek untuk user level {user_input.fitness_level} yang ingin {user_input.goal}."
+        motivation_res = model.generate_content(motivation_prompt)
+        motivation_text = motivation_res.text.strip()
+    except:
+        motivation_text = f"Jadwal {user_input.sessions_per_week} sesi siap! Fokus goal: {user_input.goal}."
+
     for item in generated_plan:
         ex = item["exercise"]
         
-        # Placeholder AI Generator (Nanti diganti Gemini API real)
-        ai_tip = f"Lakukan {ex.name} fokus pada otot {ex.muscle_group}. Pastikan form sempurna!"
+        # Panggil AI untuk setiap item (Bisa agak lambat, tapi hasil lebih bagus)
+        # Untuk performa lebih cepat, tips bisa di-generate batch atau pakai template
+        ai_tip = generate_ai_tip(ex.name, str(ex.muscle_group.value if hasattr(ex.muscle_group, 'value') else ex.muscle_group))
         
         response_items.append(schemas.ScheduleItemResponse(
             day=item["day"],
             exercise_name=ex.name,
             time=str(item["time"]),
             duration=item["duration"],
-            muscle_group=ex.muscle_group,
+            muscle_group=str(ex.muscle_group.value if hasattr(ex.muscle_group, 'value') else ex.muscle_group),
             tips=ai_tip
         ))
         
-    motivation_text = f"Bagus! Jadwal {user_input.sessions_per_week} sesi minggu ini telah dibuat. Target: {user_input.goal}."
-    
     return schemas.ScheduleResponse(
         motivation=motivation_text,
         schedule=response_items
