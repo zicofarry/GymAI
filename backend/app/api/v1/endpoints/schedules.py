@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.api import deps
 from app.models.user import User
 from app.models.exercise import Exercise
+from app.models.schedule import Schedule
 from app.schemas.user import UserProfileInput
 from app.schemas.schedule import ScheduleResponse, ScheduleItemResponse
 from app.services import csp_service, user_service, schedule_service
@@ -65,5 +66,44 @@ def generate_schedule(
         
     return ScheduleResponse(
         motivation=motivation,
+        schedule=response_items
+    )
+
+@router.get("/my-schedule", response_model=ScheduleResponse)
+def get_my_schedule(
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user)
+) -> Any:
+    """
+    Mengambil jadwal aktif milik user yang sedang login.
+    """
+    # 1. Cari jadwal yang is_active = True
+    schedule = db.query(Schedule).filter(
+        Schedule.user_id == current_user.id,
+        Schedule.is_active == True
+    ).first()
+    
+    if not schedule:
+        # Jika belum punya jadwal, return 404
+        raise HTTPException(status_code=404, detail="Kamu belum memiliki jadwal aktif. Silakan buat dulu.")
+    
+    # 2. Format data ke Schema Response
+    response_items = []
+    # Urutkan berdasarkan ID atau hari jika perlu
+    for item in schedule.items:
+        ex = item.exercise
+        muscle_val = ex.muscle_group.value if hasattr(ex.muscle_group, 'value') else str(ex.muscle_group)
+        
+        response_items.append(ScheduleItemResponse(
+            day=item.day_of_week, # Pastikan ini string enum
+            exercise_name=ex.name,
+            time=str(item.scheduled_time),
+            duration=item.duration_minutes,
+            muscle_group=muscle_val,
+            tips=item.ai_custom_tips or "Keep pushing!"
+        ))
+        
+    return ScheduleResponse(
+        motivation=schedule.ai_weekly_motivation or "Welcome back!",
         schedule=response_items
     )

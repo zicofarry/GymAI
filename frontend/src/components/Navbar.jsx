@@ -39,13 +39,22 @@ export default function Navbar() {
 
         <div className="h-6 w-px bg-gray-300/50 mx-1"></div>
 
-        {/* Links */}
+        {/* --- BAGIAN LINK (UPDATED) --- */}
         <div className="flex items-center gap-1 p-1">
           <NavLink to="/" className={navLinkClass}>Home</NavLink>
-          <NavLink to="/create" className={navLinkClass}>Schedule</NavLink>
+          
+          {/* Menu My Plan: Hanya muncul kalau sudah login */}
+          {token && (
+            <NavLink to="/result" className={navLinkClass}>My Plan</NavLink>
+          )}
+          
+          {/* Menu Create: Ganti nama jadi 'New Plan' kalau sudah login */}
+          <NavLink to="/create" className={navLinkClass}>
+            {token ? 'New Plan' : 'Schedule'}
+          </NavLink>
         </div>
 
-        {/* Auth */}
+        {/* Auth Section */}
         <div className="pl-3">
           {token ? (
             <div className="flex items-center gap-2 bg-white/80 rounded-full pl-1 pr-1 py-1 border border-white shadow-sm">
