@@ -5,10 +5,12 @@ import CreateSchedule from './pages/CreateSchedule';
 import ScheduleResult from './pages/ScheduleResult';
 import Login from './pages/Login';     // <-- Import baru
 import Register from './pages/Register'; // <-- Import baru
+import ChatWidget from './components/ChatWidget';
 
 function App() {
   return (
     <BrowserRouter>
+      <ChatWidget />  {/* Komponen Chatbot AI */}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />       {/* Route baru */}
