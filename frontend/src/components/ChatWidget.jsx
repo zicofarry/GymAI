@@ -1,15 +1,38 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { 
-    MessageCircle, X, Send, Bot, User, Zap, Info, Loader2, Sparkles 
+    MessageCircle, X, Send, Bot, User, Zap, Info, Loader2, Sparkles, 
+    Lock, AlertTriangle // Tambahkan Lock & AlertTriangle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+// --- MODAL OTENTIKASI GAGAL (Sesi Habis) ---
+const AuthRequiredModal = ({ onRedirect, onClose }) => (
+    <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-space transition-opacity duration-300">
+        <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center border-2 border-red-200 ring-4 ring-red-500/20 transform scale-105">
+            <Lock size={48} className="text-brand-red mx-auto mb-4" strokeWidth={2.5}/>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Session Expired</h3>
+            <p className="text-gray-600 mb-6">
+                Sesi Anda telah habis. Silakan login kembali untuk melanjutkan chat.
+            </p>
+            <button 
+                onClick={onRedirect}
+                className="w-full bg-brand-red text-white py-3 rounded-xl font-bold hover:bg-red-600 transition transform hover:-translate-y-0.5"
+            >
+                GO TO LOGIN
+            </button>
+        </div>
+    </div>
+);
+// --- END MODAL ---
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState('info'); // 'info' or 'action'
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  // State baru untuk Auth Modal
+  const [showAuthModal, setShowAuthModal] = useState(false); 
   
   // PERUBAHAN UTAMA: Mengubah messages menjadi object untuk menampung riwayat chat per mode
   const [chatHistories, setChatHistories] = useState({
@@ -67,8 +90,9 @@ export default function ChatWidget() {
     try {
         const token = localStorage.getItem('token');
         if (!token) {
-            alert("Sesi habis. Silakan login kembali.");
-            navigate('/login');
+            // Ganti alert() dengan modal
+            setShowAuthModal(true);
+            // navigate('/login'); // Redireksi dilakukan oleh modal
             return;
         }
 
@@ -103,115 +127,125 @@ export default function ChatWidget() {
   if (!localStorage.getItem('token')) return null; // Sembunyikan jika belum login
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans">
-      
-      {/* --- CHAT WINDOW --- */}
-      {isOpen && (
-        <div className="mb-4 w-[350px] md:w-[400px] h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-fadeInUp">
-            
-            {/* Header & Toggle */}
-            <div className="bg-gray-900 p-4 text-white">
-                <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-2">
-                        <div className="bg-brand-red p-1.5 rounded-lg">
-                            <Bot size={20} className="text-white" />
-                        </div>
-                        <div>
-                            <h3 className="font-bold text-sm">GymAI Assistant</h3>
-                            <p className="text-xs text-gray-400 flex items-center gap-1">
-                                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Online
-                            </p>
-                        </div>
-                    </div>
-                    <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white transition">
-                        <X size={20} />
-                    </button>
-                </div>
-
-                {/* Mode Switcher */}
-                <div className="flex bg-gray-800/50 p-1 rounded-lg">
-                    <button 
-                        onClick={() => { setMode('info'); setInput(''); }} // FIX: Clear input on mode switch
-                        className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-bold transition-all ${
-                            mode === 'info' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-white'
-                        }`}
-                    >
-                        <Info size={14} /> Tanya Coach
-                    </button>
-                    <button 
-                        onClick={() => { setMode('action'); setInput(''); }} // FIX: Clear input on mode switch
-                        className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-bold transition-all ${
-                            mode === 'action' ? 'bg-brand-red text-white shadow-sm' : 'text-gray-400 hover:text-white'
-                        }`}
-                    >
-                        <Zap size={14} /> Update Data
-                    </button>
-                </div>
-            </div>
-
-            {/* Chat Area */}
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-3">
-                {/* FIX: Render riwayat chat berdasarkan mode aktif */}
-                {chatHistories[mode].map((msg) => (
-                    <div 
-                        key={msg.id} 
-                        className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                        <div 
-                            className={`max-w-[80%] p-3 rounded-2xl text-sm leading-relaxed ${
-                                msg.sender === 'user' 
-                                ? 'bg-gray-900 text-white rounded-br-none' 
-                                : msg.isError 
-                                    ? 'bg-red-100 text-red-700 border border-red-200 rounded-bl-none'
-                                    : 'bg-white text-gray-700 shadow-sm border border-gray-100 rounded-bl-none'
-                            }`}
-                        >
-                            {msg.text}
-                        </div>
-                    </div>
-                ))}
-                
-                {loading && (
-                    <div className="flex justify-start">
-                        <div className="bg-white p-3 rounded-2xl rounded-bl-none shadow-sm border border-gray-100 flex items-center gap-2">
-                            <Loader2 size={16} className="animate-spin text-brand-red" />
-                            <span className="text-xs text-gray-400 italic">AI sedang mengetik...</span>
-                        </div>
-                    </div>
-                )}
-                <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input Area */}
-            <form onSubmit={handleSend} className="p-3 bg-white border-t border-gray-100 flex gap-2">
-                <input 
-                    ref={inputRef}
-                    type="text" 
-                    className="flex-1 bg-gray-100 border-0 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-brand-blueSolid outline-none transition"
-                    placeholder={mode === 'info' ? "Tanya seputar fitness..." : "Contoh: Update berat jadi 70kg..."}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    disabled={loading}
-                />
-                <button 
-                    type="submit" 
-                    disabled={!input.trim() || loading}
-                    className="bg-brand-red text-white p-2 rounded-xl hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <Send size={18} />
-                </button>
-            </form>
-        </div>
+    <>
+      {/* RENDER MODAL AUTENTIKASI GAGAL */}
+      {showAuthModal && (
+          <AuthRequiredModal
+              onRedirect={() => navigate('/login', { replace: true })}
+              onClose={() => setShowAuthModal(false)}
+          />
       )}
 
-      {/* --- FLOATING BUTTON --- */}
-      {/* The bounce animation now uses the custom animate-bounce-slow class for a smoother feel */}
-      <button 
-          onClick={() => setIsOpen(true)} 
-          className={`p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center bg-gradient-to-r from-brand-red to-red-600 animate-bounce-slow ${isOpen ? 'hidden' : ''}`}
-      >
-          <MessageCircle size={32} className="text-white" />
-      </button>
-    </div>
+      <div className={`fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans ${showAuthModal ? 'opacity-30 pointer-events-none' : ''}`}>
+        
+        {/* --- CHAT WINDOW --- */}
+        {isOpen && (
+          <div className="mb-4 w-[350px] md:w-[400px] h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-fadeInUp">
+              
+              {/* Header & Toggle */}
+              <div className="bg-gray-900 p-4 text-white">
+                  <div className="flex justify-between items-center mb-4">
+                      <div className="flex items-center gap-2">
+                          <div className="bg-brand-red p-1.5 rounded-lg">
+                              <Bot size={20} className="text-white" />
+                          </div>
+                          <div>
+                              <h3 className="font-bold text-sm">GymAI Assistant</h3>
+                              <p className="text-xs text-gray-400 flex items-center gap-1">
+                                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Online
+                              </p>
+                          </div>
+                      </div>
+                      <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white transition">
+                          <X size={20} />
+                      </button>
+                  </div>
+
+                  {/* Mode Switcher */}
+                  <div className="flex bg-gray-800/50 p-1 rounded-lg">
+                      <button 
+                          onClick={() => { setMode('info'); setInput(''); }} // FIX: Clear input on mode switch
+                          className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-bold transition-all ${
+                              mode === 'info' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-white'
+                          }`}
+                      >
+                          <Info size={14} /> Tanya Coach
+                      </button>
+                      <button 
+                          onClick={() => { setMode('action'); setInput(''); }} // FIX: Clear input on mode switch
+                          className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-bold transition-all ${
+                              mode === 'action' ? 'bg-brand-red text-white shadow-sm' : 'text-gray-400 hover:text-white'
+                          }`}
+                      >
+                          <Zap size={14} /> Update Data
+                      </button>
+                  </div>
+              </div>
+
+              {/* Chat Area */}
+              <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-3">
+                  {/* FIX: Render riwayat chat berdasarkan mode aktif */}
+                  {chatHistories[mode].map((msg) => (
+                      <div 
+                          key={msg.id} 
+                          className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                          <div 
+                              className={`max-w-[80%] p-3 rounded-2xl text-sm leading-relaxed ${
+                                  msg.sender === 'user' 
+                                  ? 'bg-gray-900 text-white rounded-br-none' 
+                                  : msg.isError 
+                                      ? 'bg-red-100 text-red-700 border border-red-200 rounded-bl-none'
+                                      : 'bg-white text-gray-700 shadow-sm border border-gray-100 rounded-bl-none'
+                              }`}
+                          >
+                              {msg.text}
+                          </div>
+                      </div>
+                  ))}
+                  
+                  {loading && (
+                      <div className="flex justify-start">
+                          <div className="bg-white p-3 rounded-2xl rounded-bl-none shadow-sm border border-gray-100 flex items-center gap-2">
+                              <Loader2 size={16} className="animate-spin text-brand-red" />
+                              <span className="text-xs text-gray-400 italic">AI sedang mengetik...</span>
+                          </div>
+                      </div>
+                  )}
+                  <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input Area */}
+              <form onSubmit={handleSend} className="p-3 bg-white border-t border-gray-100 flex gap-2">
+                  <input 
+                      ref={inputRef}
+                      type="text" 
+                      className="flex-1 bg-gray-100 border-0 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-brand-blueSolid outline-none transition"
+                      placeholder={mode === 'info' ? "Tanya seputar fitness..." : "Contoh: Update berat jadi 70kg..."}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      disabled={loading}
+                  />
+                  <button 
+                      type="submit" 
+                      disabled={!input.trim() || loading}
+                      className="bg-brand-red text-white p-2 rounded-xl hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                      <Send size={18} />
+                  </button>
+              </form>
+          </div>
+        )}
+
+        {/* --- FLOATING BUTTON --- */}
+        {/* The bounce animation now uses the custom animate-bounce-slow class for a smoother feel */}
+        <button 
+            onClick={() => setIsOpen(true)} 
+            className={`p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center bg-gradient-to-r from-brand-red to-red-600 animate-bounce-slow ${isOpen ? 'hidden' : ''}`}
+        >
+            <MessageCircle size={32} className="text-white" />
+        </button>
+      </div>
+    </>
   );
 }

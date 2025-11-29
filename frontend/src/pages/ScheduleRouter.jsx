@@ -1,14 +1,46 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'; // Tambahkan Link
 import axios from 'axios';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle, X } from 'lucide-react'; // Tambahkan AlertTriangle dan X
 
 // Base URL Hardcoded (Ganti jika menggunakan instance axios terpusat)
 const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 
+// --- MODAL KEGAGALAN/INFO (REUSABLE, DIADAPTASI) ---
+const FailureModal = ({ title, message, onClose, actionButton, actionLink }) => (
+    <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-space transition-opacity duration-300">
+        <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center border-2 border-red-200 ring-4 ring-red-500/20 transform scale-105">
+            <AlertTriangle size={48} className="text-brand-red mx-auto mb-4" strokeWidth={2.5}/>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">{title}</h3>
+            <p className="text-gray-600 mb-6">{message}</p>
+            {actionButton && (
+                <Link 
+                    to={actionLink || '/'}
+                    onClick={onClose}
+                    className="w-full bg-brand-red text-white py-3 rounded-xl font-bold hover:bg-red-600 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                >
+                    {actionButton}
+                </Link>
+            )}
+            {!actionButton && (
+                <button onClick={onClose} className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-black transition transform hover:-translate-y-0.5">OK</button>
+            )}
+        </div>
+    </div>
+);
+
+
 const ScheduleRouter = () => {
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
+    // State baru untuk mengontrol modal error
+    const [errorModal, setErrorModal] = useState({ show: false, title: '', message: '', actionLink: null }); 
+
+    // Handler umum untuk error, sekaligus mengarahkan ke Home
+    const handleGeneralError = () => {
+        setErrorModal({ show: false, title: '', message: '', actionLink: null });
+        navigate('/', { replace: true });
+    }
 
     useEffect(() => {
         if (!token) {
@@ -40,17 +72,37 @@ const ScheduleRouter = () => {
                     localStorage.removeItem('username');
                     navigate('/login', { replace: true });
                 }
-                // Error lainnya
+                // Error lainnya -> Ganti alert dengan modal
                 else {
                     console.error("Error fetching schedule:", error.response || error);
-                    alert("Gagal terhubung ke server untuk cek jadwal.");
-                    navigate('/', { replace: true });
+                    
+                    setErrorModal({
+                        show: true,
+                        title: "Server Connection Error",
+                        message: "Gagal terhubung ke server untuk cek jadwal. Pastikan backend berjalan dan coba lagi.",
+                        actionLink: "/"
+                    });
                 }
             }
         };
 
         fetchScheduleExistence();
     }, [token, navigate]);
+
+    // Render Modal jika ada Error umum
+    if (errorModal.show) {
+        return (
+            <div className="min-h-screen bg-gray-50 font-sans">
+                <FailureModal 
+                    title={errorModal.title}
+                    message={errorModal.message}
+                    onClose={handleGeneralError} // Gunakan handler yang akan navigate ke home
+                    actionButton="Go Home"
+                    actionLink={errorModal.actionLink}
+                />
+            </div>
+        );
+    }
 
     // Tampilan loading minimalis yang cepat
     return (
