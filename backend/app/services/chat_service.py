@@ -227,7 +227,40 @@ class ChatService:
             return await self._handle_info_mode(user, message)
 
     async def _handle_info_mode(self, user: User, message: str):
-        prompt = f"Kamu Coach GymAI. User: {user.username}. Jawab: {message}"
+        """Menangani Chat Biasa dengan Konteks User (Context-Aware)"""
+        
+        # 1. Siapkan Data Konteks (Contekan buat AI)
+        # Handle Enum value agar bersih string-nya
+        fitness_val = user.fitness_level.value if hasattr(user.fitness_level, 'value') else str(user.fitness_level)
+        goal_val = user.main_goal.value if hasattr(user.main_goal, 'value') else str(user.main_goal)
+        
+        # Ambil daftar cedera
+        injury_list = [i.muscle_group.value if hasattr(i.muscle_group, 'value') else str(i.muscle_group) for i in user.injuries]
+        injuries_str = ", ".join(injury_list) if injury_list else "Tidak ada cedera"
+
+        # 2. Susun Prompt
+        prompt = f"""
+        PERAN:
+        Kamu adalah Personal Trainer AI (GymAI) untuk user bernama {user.username}.
+        
+        DATA KLIEN KAMU SAAT INI:
+        - Berat Badan: {user.weight_kg} kg
+        - Tinggi Badan: {user.height_cm} cm
+        - Level Fitness: {fitness_val}
+        - Goal Utama: {goal_val}
+        - Jadwal Latihan: {user.target_sessions_per_week}x seminggu
+        - Cedera/Pantangan: {injuries_str}
+        
+        TUGAS:
+        Jawab pertanyaan user berdasarkan DATA KLIEN di atas.
+        - Jika user bertanya "Berapa berat saya?", jawab sesuai data.
+        - Jika user bertanya saran latihan, sesuaikan dengan Level dan Cedera mereka.
+        - Jadilah ramah, suportif, dan memotivasi.
+        
+        PERTANYAAN USER:
+        {message}
+        """
+        
         try:
             response = await self.model_info.generate_content_async(prompt)
             return response.text
