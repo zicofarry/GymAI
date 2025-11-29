@@ -139,10 +139,20 @@ export default function ScheduleResult() {
   if (!result) return null; // Fallback jika tidak ada data dan tidak ada modal (seharusnya tidak terjadi)
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 font-space">
+    // Hapus bg-gray-50, tambahkan relative
+    <div className="min-h-screen pb-20 font-space relative overflow-hidden">
       <Navbar />
+
+      {/* --- BACKGROUND LAYER (Dynamic) --- */}
+      <div className="bg-noise z-0"></div>
+      <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] bg-purple-200/40 rounded-full mix-blend-multiply filter blur-[100px] animate-blob z-0"></div>
+      <div className="absolute top-[10%] right-[-20%] w-[50vw] h-[50vw] bg-blue-200/40 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-2000 z-0"></div>
+      <div className="absolute bottom-[-20%] left-[30%] w-[50vw] h-[50vw] bg-red-200/40 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-4000 z-0"></div>
+      <div className="absolute inset-0 bg-animated-grid animate-grid-flow z-0 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#FAFAFA] via-transparent to-transparent z-0 pointer-events-none" />
       
-      <div className="max-w-4xl mx-auto px-4 py-10 pt-28">
+      {/* Konten utama dengan z-10 agar di atas background */}
+      <div className="relative z-10 max-w-4xl mx-auto px-4 py-10 pt-28">
         
         {/* HEADER MOTIVATION (Redesign: Lebih Premium) */}
         <div className="text-center mb-12">
@@ -157,7 +167,7 @@ export default function ScheduleResult() {
                 Your <span className="text-brand-red">Workout Plan</span>
             </h1>
             
-            {/* Quote Container (OUTLINE HIJAU DIHAPUS) */}
+            {/* Quote Container (Outline dihapus) */}
             <div className="bg-white p-5 rounded-2xl shadow-md border border-gray-100 max-w-xl mx-auto">
                 <p className="text-gray-700 italic font-medium text-lg">"{result.motivation}"</p>
             </div>

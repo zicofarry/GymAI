@@ -42,7 +42,7 @@ const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 // --- MODAL KHUSUS AUTH ---
 const AuthModal = ({ handleRedirect }) => (
     <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-space transition-opacity duration-300">
-        <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center border-2 border-gray-200 ring-1 ring-gray-100 transform scale-105">
+        <div className="bg-white p-8 rounded-3xl shadow-md w-full max-w-sm text-center border-2 border-gray-200 ring-1 ring-gray-100 transform scale-105">
             <Lock size={48} className="text-brand-red mx-auto mb-4" strokeWidth={2}/>
             <h3 className="text-2xl font-bold text-gray-900 mb-2">Access Required</h3>
             <p className="text-gray-600 mb-6">
@@ -62,7 +62,7 @@ const AuthModal = ({ handleRedirect }) => (
 // --- MODAL KEGAGALAN API/VALIDASI ---
 const FailureModal = ({ title, message, onClose }) => (
     <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-space transition-opacity duration-300">
-        <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center border-2 border-red-200 ring-4 ring-red-500/20 transform scale-105">
+        <div className="bg-white p-8 rounded-3xl shadow-md w-full max-w-sm text-center border-2 border-red-200 ring-4 ring-red-500/20 transform scale-105">
             <AlertTriangle size={48} className="text-brand-red mx-auto mb-4" strokeWidth={2.5}/>
             <h3 className="text-2xl font-bold text-gray-900 mb-2">{title}</h3>
             <p className="text-gray-600 mb-6">{message}</p>
@@ -83,9 +83,9 @@ const StepCard = ({ num, title, currentStep, setStep, icon: Icon, isActive, isCo
     return (
       <div className="flex">
         <div className="flex flex-col items-center mr-4 md:mr-6">
-            <span className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 relative z-10 shadow-lg ${
+            <span className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 relative z-10 shadow-md ${
               isActive ? 'bg-brand-red text-white ring-4 ring-red-500/30' : 
-              isCompleted ? 'bg-green-500 text-white shadow-xl' : 
+              isCompleted ? 'bg-green-500 text-white shadow-md' : 
               'bg-white text-gray-500 border-2 border-gray-200'
             }`}>
               {isCompleted ? <Check size={18} /> : num}
@@ -99,7 +99,7 @@ const StepCard = ({ num, title, currentStep, setStep, icon: Icon, isActive, isCo
           <div 
             className={`bg-white p-6 rounded-3xl shadow-sm w-full mb-8 transition-all duration-300 border-2 ${
               isLocked ? 'border-gray-100 opacity-50 cursor-not-allowed' : 
-              isActive ? 'border-gray-900 ring-1 ring-gray-900/5 shadow-xl' : 
+              isActive ? 'border-gray-900 ring-1 ring-gray-900/5 shadow-md' : 
               'border-gray-100 hover:shadow-md cursor-pointer'
             }`}
             onClick={() => !isLocked && setStep(num)}
@@ -356,8 +356,17 @@ export default function CreateSchedule() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 font-space">
+    // Hapus bg-gray-50, tambahkan relative
+    <div className="min-h-screen pb-20 font-space relative overflow-hidden">
       <Navbar />
+
+      {/* --- BACKGROUND LAYER (Dynamic) --- */}
+      <div className="bg-noise z-0"></div>
+      <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] bg-purple-200/40 rounded-full mix-blend-multiply filter blur-[100px] animate-blob z-0"></div>
+      <div className="absolute top-[10%] right-[-20%] w-[50vw] h-[50vw] bg-blue-200/40 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-2000 z-0"></div>
+      <div className="absolute bottom-[-20%] left-[30%] w-[50vw] h-[50vw] bg-red-200/40 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-4000 z-0"></div>
+      <div className="absolute inset-0 bg-animated-grid animate-grid-flow z-0 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#FAFAFA] via-transparent to-transparent z-0 pointer-events-none" />
       
       {/* RENDER MODAL AUTH */}
       {showLoginModal && <AuthModal handleRedirect={handleLoginRedirect} />}
@@ -371,7 +380,8 @@ export default function CreateSchedule() {
           />
       )}
 
-      <div className={`max-w-2xl mx-auto px-4 py-10 pt-24 ${showLoginModal || errorModal.show ? 'opacity-30 pointer-events-none' : ''}`}>
+      {/* Konten utama dengan z-10 agar di atas background */}
+      <div className={`relative z-10 max-w-2xl mx-auto px-4 py-10 pt-24 ${showLoginModal || errorModal.show ? 'opacity-30 pointer-events-none' : ''}`}>
         <div className="text-center mb-12">
           <h2 className="text-4xl font-black text-gray-900 leading-tight tracking-tight">Design Your <span className="text-brand-red">Protocol</span></h2>
           <p className="text-gray-500 mt-2 font-medium">Customize your constraints. Let AI handle the complexity.</p>
@@ -416,7 +426,7 @@ export default function CreateSchedule() {
           <div>
             <div className="flex justify-center mb-8">
                 <div className={`p-6 rounded-full bg-gray-50 border-4 transition-all duration-300 ${
-                    formData.fitness_level === 'Athlete' ? 'border-brand-red text-brand-red scale-110 shadow-lg' : 'border-gray-200 text-gray-400'
+                    formData.fitness_level === 'Athlete' ? 'border-brand-red text-brand-red scale-110 shadow-md' : 'border-gray-200 text-gray-400'
                 }`}>
                     <Dumbbell size={48} strokeWidth={formData.fitness_level === 'Athlete' ? 2 : 1.5} />
                 </div>
@@ -457,7 +467,7 @@ export default function CreateSchedule() {
                 {Object.entries(GOALS).map(([goal, Icon]) => (
                   <button 
                     key={goal}
-                    className={`p-4 rounded-xl border-2 text-sm font-bold transition flex flex-col items-center gap-2 ${formData.goal === goal ? 'bg-brand-red text-white border-brand-red shadow-lg shadow-red-200' : 'bg-white text-gray-500 border-gray-100 hover:border-red-200'}`}
+                    className={`p-4 rounded-xl border-2 text-sm font-bold transition flex flex-col items-center gap-2 ${formData.goal === goal ? 'bg-brand-red text-white border-brand-red shadow-md shadow-red-200/50' : 'bg-white text-gray-500 border-gray-100 hover:border-red-200'}`}
                     onClick={() => handleUpdate('goal', goal)}
                   >
                     <Icon size={24} />

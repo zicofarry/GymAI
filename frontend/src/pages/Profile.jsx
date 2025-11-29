@@ -146,8 +146,17 @@ export default function Profile() {
   if (loading || !user) return <div className="min-h-screen flex justify-center items-center">Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 font-space">
+    // Hapus bg-gray-50, tambahkan relative
+    <div className="min-h-screen pb-20 font-space relative overflow-hidden">
       <Navbar />
+
+      {/* --- BACKGROUND LAYER (Dynamic) --- */}
+      <div className="bg-noise z-0"></div>
+      <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] bg-purple-200/40 rounded-full mix-blend-multiply filter blur-[100px] animate-blob z-0"></div>
+      <div className="absolute top-[10%] right-[-20%] w-[50vw] h-[50vw] bg-blue-200/40 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-2000 z-0"></div>
+      <div className="absolute bottom-[-20%] left-[30%] w-[50vw] h-[50vw] bg-red-200/40 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-4000 z-0"></div>
+      <div className="absolute inset-0 bg-animated-grid animate-grid-flow z-0 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#FAFAFA] via-transparent to-transparent z-0 pointer-events-none" />
 
       {/* RENDER MODAL SUKSES */}
       {showSuccessModal && (
@@ -175,7 +184,8 @@ export default function Profile() {
           />
       )}
       
-      <div className={`max-w-5xl mx-auto px-4 py-10 pt-28 ${showSuccessModal || showFailureModal || showPlaceholderModal.show ? 'opacity-30 pointer-events-none' : ''}`}>
+      {/* Konten utama dengan z-10 agar di atas background */}
+      <div className={`relative z-10 max-w-5xl mx-auto px-4 py-10 pt-28 ${showSuccessModal || showFailureModal || showPlaceholderModal.show ? 'opacity-30 pointer-events-none' : ''}`}>
         
         {/* HEADER PROFILE */}
         <div className="flex flex-col md:flex-row items-center gap-6 mb-10 bg-white p-8 rounded-3xl shadow-md border-2 border-gray-100">
