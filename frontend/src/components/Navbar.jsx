@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Dumbbell, LogOut, User } from 'lucide-react';
+import { Dumbbell, LogOut } from 'lucide-react';
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -8,53 +8,68 @@ export default function Navbar() {
   const username = localStorage.getItem('username');
 
   const handleLogout = () => {
-    if (confirm("Yakin ingin logout?")) {
+    if (confirm("Logout?")) {
       localStorage.removeItem('token');
       localStorage.removeItem('username');
       navigate('/login');
     }
   };
 
-  // Class untuk link: Aktif vs Tidak Aktif
   const navLinkClass = ({ isActive }) => 
-    `transition font-medium ${isActive ? 'text-brand-red font-bold' : 'text-gray-600 hover:text-brand-red'}`;
+    `relative px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 ease-out ${
+      isActive 
+        ? 'bg-white text-gray-900 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.1)] ring-1 ring-black/5' 
+        : 'text-gray-500 hover:text-gray-900 hover:bg-white/40'
+    }`;
 
   return (
-    <nav className="w-full py-4 px-6 flex justify-between items-center bg-white border-b border-gray-100 sticky top-0 z-50">
-      <NavLink to="/" className="flex items-center gap-2 group">
-        <div className="bg-brand-red p-2 rounded-lg text-white group-hover:rotate-12 transition">
-          <Dumbbell size={24} />
-        </div>
-        <span className="text-2xl font-bold italic tracking-tighter text-gray-800">
-          GYM<span className="text-brand-red">AI</span>
-        </span>
-      </NavLink>
-      
-      <div className="hidden md:flex gap-8 items-center">
-        <NavLink to="/" className={navLinkClass}>Home</NavLink>
-        <NavLink to="/create" className={navLinkClass}>Schedule</NavLink>
+    <div className="fixed top-8 w-full flex justify-center z-50 px-6">
+      {/* IMPROVED: Backdrop blur lebih kuat, shadow lebih soft, border lebih crisp */}
+      <nav className="flex items-center gap-1 p-1.5 bg-white/60 backdrop-blur-2xl border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.04)] rounded-full ring-1 ring-white/50">
         
-        {token ? (
-          <div className="flex items-center gap-4 pl-4 border-l border-gray-200 ml-4">
-             <div className="flex items-center gap-2 text-gray-900 font-bold">
-               <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-brand-dark">
-                 <User size={16} />
-               </div>
-               <span>{username}</span>
-             </div>
-             <button 
-                onClick={handleLogout} 
-                className="flex items-center gap-1 text-sm text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition"
-             >
-               <LogOut size={16}/> Logout
-             </button>
+        {/* Logo Section */}
+        <NavLink to="/" className="flex items-center gap-2 pl-2 pr-4 group mr-1">
+          <div className="bg-gradient-to-br from-brand-red to-red-600 p-1.5 rounded-full text-white group-hover:rotate-12 transition-transform shadow-lg shadow-red-500/30">
+            <Dumbbell size={16} fill="currentColor" />
           </div>
-        ) : (
-          <NavLink to="/login" className="bg-gray-900 text-white px-5 py-2 rounded-lg hover:bg-gray-700 transition shadow-lg shadow-gray-200">
-            Login
-          </NavLink>
-        )}
-      </div>
-    </nav>
+          <span className="text-base font-bold tracking-tight text-gray-900 font-space">
+            GYM<span className="text-brand-red">AI</span>
+          </span>
+        </NavLink>
+
+        <div className="h-6 w-px bg-gray-300/50 mx-1"></div>
+
+        {/* Links */}
+        <div className="flex items-center gap-1 p-1">
+          <NavLink to="/" className={navLinkClass}>Home</NavLink>
+          <NavLink to="/create" className={navLinkClass}>Schedule</NavLink>
+        </div>
+
+        {/* Auth */}
+        <div className="pl-3">
+          {token ? (
+            <div className="flex items-center gap-2 bg-white/80 rounded-full pl-1 pr-1 py-1 border border-white shadow-sm">
+               <div className="flex items-center gap-2 px-3">
+                  <div className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </div>
+                  <span className="text-xs font-bold text-gray-700 max-w-[80px] truncate">{username}</span>
+               </div>
+               <button 
+                onClick={handleLogout} 
+                className="w-8 h-8 flex items-center justify-center bg-gray-50 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all hover:scale-110"
+               >
+                 <LogOut size={14}/>
+               </button>
+            </div>
+          ) : (
+            <NavLink to="/login" className="bg-gray-900 text-white text-xs px-5 py-2.5 rounded-full font-bold hover:bg-black transition-all hover:shadow-lg hover:shadow-gray-900/20 hover:-translate-y-0.5 ml-2">
+              Login
+            </NavLink>
+          )}
+        </div>
+      </nav>
+    </div>
   );
 }
