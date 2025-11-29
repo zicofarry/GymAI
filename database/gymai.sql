@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Nov 29, 2025 at 02:27 PM
+-- Generation Time: Nov 29, 2025 at 03:18 PM
 -- Server version: 8.4.3
 -- PHP Version: 8.3.26
 
@@ -84,7 +84,7 @@ INSERT INTO `schedules` (`id`, `user_id`, `start_date`, `end_date`, `is_active`,
 (7, 5, '2025-11-30', '2025-12-06', 0, 'Halo demo1, Semangat untuk goal Muscle Gain!', '2025-11-29 10:01:03'),
 (8, 5, '2025-11-30', '2025-12-06', 0, 'Halo demo1, Semangat untuk goal Flexibility!', '2025-11-29 10:02:37'),
 (9, 5, '2025-11-30', '2025-12-06', 0, 'Halo demo1, Semangat untuk goal Stay Healthy!', '2025-11-29 10:06:34'),
-(10, 5, '2025-11-30', '2025-12-06', 1, 'Halo demo1, Semangat untuk goal Fat Loss!', '2025-11-29 10:09:17'),
+(10, 5, '2025-11-30', '2025-12-06', 0, 'Halo demo1, Semangat untuk goal Fat Loss!', '2025-11-29 10:09:17'),
 (11, 2, '2025-11-30', '2025-12-06', 0, 'Halo zicofarry, Semangat untuk goal Muscle Gain!', '2025-11-29 10:19:05'),
 (12, 2, '2025-11-30', '2025-12-06', 0, 'Halo zicofarry, ayo semangat!', '2025-11-29 12:17:49'),
 (13, 2, '2025-11-30', '2025-12-06', 0, 'Halo zicofarry, ayo semangat!', '2025-11-29 12:52:58'),
@@ -105,7 +105,9 @@ INSERT INTO `schedules` (`id`, `user_id`, `start_date`, `end_date`, `is_active`,
 (28, 2, '2025-11-30', '2025-12-06', 0, 'Jadwal diperbarui otomatis untuk zicofarry (via Chatbot)', '2025-11-29 13:40:58'),
 (29, 2, '2025-11-30', '2025-12-06', 0, 'Jadwal diperbarui otomatis untuk zicofarry (via Chatbot)', '2025-11-29 13:40:59'),
 (30, 2, '2025-11-30', '2025-12-06', 0, 'Jadwal diperbarui otomatis untuk zicofarry (via Chatbot)', '2025-11-29 13:40:59'),
-(31, 2, '2025-11-30', '2025-12-06', 1, 'Halo zicofarry, ayo semangat!', '2025-11-29 14:26:24');
+(31, 2, '2025-11-30', '2025-12-06', 1, 'Halo zicofarry, ayo semangat!', '2025-11-29 14:26:24'),
+(32, 5, '2025-11-30', '2025-12-06', 0, 'Halo demo1, ayo semangat!', '2025-11-29 15:02:45'),
+(33, 5, '2025-11-30', '2025-12-06', 1, 'Jadwal diperbarui otomatis untuk demo1 (via Chatbot)', '2025-11-29 15:16:32');
 
 -- --------------------------------------------------------
 
@@ -252,7 +254,15 @@ INSERT INTO `schedule_items` (`id`, `schedule_id`, `exercise_id`, `day_of_week`,
 (121, 31, 2, 'Saturday', '20:25:00', 10, 0, 'Focus on form for Bodyweight Squat'),
 (122, 31, 2, 'Sunday', '20:00:00', 10, 0, 'Focus on form for Bodyweight Squat'),
 (123, 31, 3, 'Sunday', '20:15:00', 5, 0, 'Focus on form for Plank'),
-(124, 31, 2, 'Sunday', '20:25:00', 10, 0, 'Focus on form for Bodyweight Squat');
+(124, 31, 2, 'Sunday', '20:25:00', 10, 0, 'Focus on form for Bodyweight Squat'),
+(125, 32, 6, 'Tuesday', '14:00:00', 30, 0, 'Focus on form for Treadmill Run'),
+(126, 32, 4, 'Wednesday', '14:00:00', 15, 0, 'Focus on form for Jumping Jacks'),
+(127, 32, 3, 'Thursday', '14:00:00', 5, 0, 'Focus on form for Plank'),
+(128, 32, 1, 'Friday', '14:00:00', 10, 0, 'Focus on form for Push Up'),
+(129, 32, 6, 'Saturday', '14:00:00', 30, 0, 'Focus on form for Treadmill Run'),
+(130, 33, 4, 'Monday', '09:00:00', 15, 1, 'Focus on form for Jumping Jacks'),
+(131, 33, 2, 'Tuesday', '09:00:00', 10, 1, 'Focus on form for Bodyweight Squat'),
+(132, 33, 1, 'Wednesday', '09:00:00', 10, 0, 'Focus on form for Push Up');
 
 -- --------------------------------------------------------
 
@@ -286,7 +296,7 @@ INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `weight_kg`, `h
 (2, 'zicofarry', 'zicofarry@gmail.com', '$2b$12$Aq4yAyAEJga6CLNkFVP35uDAL7YM89vYZkxNyQMyeRXL8oynfUZYO', 45, 165, 'Intermediate', 'Muscle Gain', 'Home', 6, 45, '2025-11-29 05:46:24', '2025-11-29 14:26:24', 'Night'),
 (3, 'tes', 'tes@gmail.com', '$2b$12$SePXmDW5gggFbjJbDefF2Ohm0HHKlQw5KdK2vdR39ud13Y3onTIg.', NULL, NULL, NULL, NULL, NULL, 3, 45, '2025-11-29 06:16:52', '2025-11-29 06:16:52', 'Anytime'),
 (4, 'raffa', 'raffa@gmail.com', '$2b$12$xCXQEd4Yr9tTN0OFe1wdo.KoG96/XCU3YAag5Pkok.IkxE3CfJI5S', 35, 145, 'Intermediate', 'Stay Healthy', 'Home', 3, 45, '2025-11-29 06:29:01', '2025-11-29 09:15:31', 'Anytime'),
-(5, 'demo1', 'demo1@gmail.com', '$2b$12$Od3e53apsZso/QiMFh.re.Ut0AfX7bcg7iHiWC4iDXjztxlZPzduC', 55, 170, 'Beginner', 'Fat Loss', 'Home', 4, 45, '2025-11-29 09:23:21', '2025-11-29 10:09:17', 'Anytime');
+(5, 'demo1', 'demo1@gmail.com', '$2b$12$Od3e53apsZso/QiMFh.re.Ut0AfX7bcg7iHiWC4iDXjztxlZPzduC', 46, 165, 'Intermediate', 'Stay Healthy', 'Home', 3, 45, '2025-11-29 09:23:21', '2025-11-29 15:16:32', 'Anytime');
 
 -- --------------------------------------------------------
 
@@ -312,7 +322,6 @@ INSERT INTO `user_busy_times` (`id`, `user_id`, `day_of_week`, `start_time`, `en
 (2, 1, 'Wednesday', '08:00:00', '12:00:00', 0),
 (6, 4, 'Monday', '21:02:00', '12:21:00', 0),
 (7, 4, 'Wednesday', NULL, NULL, 1),
-(21, 5, 'Monday', NULL, NULL, 1),
 (67, 2, 'Monday', NULL, NULL, 1),
 (68, 2, 'Tuesday', NULL, NULL, 1),
 (69, 2, 'Wednesday', NULL, NULL, 1),
@@ -364,7 +373,9 @@ CREATE TABLE `user_logs` (
 
 INSERT INTO `user_logs` (`id`, `user_id`, `schedule_item_id`, `log_date`, `actual_duration_minutes`, `calories_burned`, `rating`, `feedback_text`) VALUES
 (7, 2, 32, '2025-11-29 19:12:38', 15, 50, 5, 'Selesai via Checklist UI'),
-(8, 2, 33, '2025-11-29 19:12:51', 10, 50, 5, 'Selesai via Checklist UI');
+(8, 2, 33, '2025-11-29 19:12:51', 10, 50, 5, 'Selesai via Checklist UI'),
+(12, 5, 130, '2025-11-29 22:16:52', 15, 52, 5, 'Selesai via Checklist UI'),
+(13, 5, 131, '2025-11-29 22:16:52', 10, 39, 5, 'Selesai via Checklist UI');
 
 --
 -- Indexes for dumped tables
@@ -435,13 +446,13 @@ ALTER TABLE `exercise_library`
 -- AUTO_INCREMENT for table `schedules`
 --
 ALTER TABLE `schedules`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT for table `schedule_items`
 --
 ALTER TABLE `schedule_items`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=125;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=133;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -453,13 +464,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `user_busy_times`
 --
 ALTER TABLE `user_busy_times`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
 
 --
 -- AUTO_INCREMENT for table `user_injuries`
 --
 ALTER TABLE `user_injuries`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `user_logs`
