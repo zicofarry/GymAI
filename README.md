@@ -19,7 +19,7 @@
 4. Jalankan server backend
    ```
    cd backend/
-   uvicorn main:app --reload
+   uvicorn app.main:app --reload
    ```
 
 5. Jalankan server frontend
