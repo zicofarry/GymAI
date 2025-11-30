@@ -1,5 +1,8 @@
 # GymAI: Sistem Penjadwalan Kebugaran Cerdas Berbasis AI
 
+https://github.com/user-attachments/assets/a915419b-d4e7-481f-a141-e941bb22deff
+
+
 ## Penjelasan Proyek
 
 GymAI adalah aplikasi web *full-stack* yang dirancang untuk mengoptimalkan perencanaan kebugaran pribadi. Dengan mengintegrasikan algoritma *Constraint Satisfaction Problems* (CSP) dan *Generative AI* (Google Gemini), sistem ini menghasilkan jadwal latihan yang dipersonalisasi serta mematuhi batasan spesifik pengguna, metrik fisik, dan ketersediaan waktu. Aplikasi ini memfasilitasi interaksi yang mulus antara pengguna dan data kebugaran mereka melalui antarmuka *chatbot* cerdas dan dasbor web yang responsif.
@@ -123,4 +126,7 @@ Ikuti langkah-langkah berikut untuk menjalankan aplikasi di lingkungan lokal:
 
 
 ## Dokumentasi
-
+<div>
+    <a>Klik untuk melihat vidio dokumentasi demo aplikasi</a><br><br>
+    <a href="https://youtu.be/cQY0GuRAdeM"><img src="https://img.shields.io/badge/YouTube-%23FF0000.svg?style=for-the-badge&logo=YouTube&logoColor=white" /></a>
+</div>
