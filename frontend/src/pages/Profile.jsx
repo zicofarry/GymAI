@@ -6,12 +6,12 @@ import {
     User, TrendingUp, Activity, MapPin, Save, 
     Dumbbell, Flame, Clock, CalendarDays, History, 
     Sparkles, BrainCircuit, Loader2, X, ArrowLeft, ArrowRight,
-    AlertTriangle, CheckCircle2
+    AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight 
 } from 'lucide-react';
 
 const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 
-// --- MODAL COMPONENTS ---
+// --- MODAL COMPONENTS (TANPA PERUBAHAN) ---
 
 const SuccessModal = ({ message, onClose }) => (
     <div className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-space animate-fadeIn">
@@ -55,15 +55,173 @@ const AnalysisModal = ({ suggestion, onClose }) => (
     </div>
 );
 
-const HistoryModal = ({ logs, onClose }) => {
-    const [page, setPage] = useState(1);
-    const logsPerPage = 7;
-    const totalPages = Math.ceil(logs.length / logsPerPage);
-    const currentLogs = logs.slice((page - 1) * logsPerPage, page * logsPerPage);
+const HistoryLogModal = ({ onClose, fetchLogsByDate, loadingLogs, logsForSelectedDate, selectedDate, setSelectedDate }) => {
+    // State untuk mengontrol bulan yang sedang dilihat di kalender
+    const [currentView, setCurrentView] = useState(new Date(selectedDate));
+    const today = new Date();
+
+    // FIX BUG: Fungsi untuk format tanggal YYYY-MM-DD menggunakan komponen lokal
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        // getMonth() is 0-indexed, so add 1
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    // Fungsi untuk mendapatkan hari-hari dalam bulan yang sedang dilihat
+    const getDaysInMonth = (date) => {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const firstDayOfMonth = new Date(year, month, 1);
+        
+        // FIX BUG: Gunakan .setHours(12) untuk menghindari masalah DST/timezone
+        const lastDayOfMonth = new Date(year, month + 1, 0); 
+        lastDayOfMonth.setHours(12);
+
+        // Dapatkan hari dalam seminggu untuk hari pertama (0=Minggu, 1=Senin, ...)
+        const startDayOfWeek = firstDayOfMonth.getDay(); 
+
+        const days = [];
+        
+        // Tambahkan placeholder untuk hari-hari sebelum tanggal 1
+        for (let i = 0; i < startDayOfWeek; i++) {
+            days.push({ date: null, isCurrentMonth: false });
+        }
+
+        // Tambahkan hari-hari dalam bulan
+        for (let i = 1; i <= lastDayOfMonth.getDate(); i++) {
+            // FIX BUG: Buat tanggal dengan jam 12 siang lokal untuk menghindari shift
+            const dayDate = new Date(year, month, i);
+            dayDate.setHours(12);
+
+            days.push({ 
+                date: formatDate(dayDate), 
+                dayNum: i,
+                isCurrentMonth: true 
+            });
+        }
+        return days;
+    };
+
+    // Handler Navigasi Bulan
+    const goToPreviousMonth = () => {
+        setCurrentView(prev => {
+            const newDate = new Date(prev.getFullYear(), prev.getMonth() - 1, 1);
+            return newDate;
+        });
+    };
+
+    const goToNextMonth = () => {
+        setCurrentView(prev => {
+            const newDate = new Date(prev.getFullYear(), prev.getMonth() + 1, 1);
+            return newDate;
+        });
+    };
+    
+    // Render Kalender
+    const CalendarGrid = () => {
+        const days = getDaysInMonth(currentView);
+        // Day Names: Minggu = 0, Sabtu = 6
+        const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+        const todayISO = formatDate(today);
+        
+        // HITUNG INDEX HARI YANG DIPILIH (0=Minggu, 6=Sabtu)
+        // Gunakan new Date() dari selectedDate, karena selectedDate adalah string ISO YYYY-MM-DD
+        const selectedDateObject = new Date(selectedDate + 'T00:00:00'); 
+        const selectedDayIndex = selectedDateObject.getDay();
+
+
+        const handleDayClick = (dayDate) => {
+            if (!dayDate) return;
+            setSelectedDate(dayDate);
+            fetchLogsByDate(dayDate);
+        };
+        
+        const isCurrentMonthView = currentView.getMonth() === today.getMonth() && currentView.getFullYear() === today.getFullYear();
+        
+        // Cek apakah bulan yang ditampilkan adalah bulan di masa depan
+        const isFutureMonth = currentView.getFullYear() > today.getFullYear() || 
+                              (currentView.getFullYear() === today.getFullYear() && currentView.getMonth() > today.getMonth());
+
+        return (
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100"> 
+                {/* Header Navigasi Bulan */}
+                <div className="flex justify-between items-center mb-4">
+                    <button onClick={goToPreviousMonth} className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition">
+                        <ChevronLeft size={20} />
+                    </button>
+                    <h4 className="font-bold text-gray-900 text-lg">
+                        {currentView.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                    </h4>
+                    <button 
+                        onClick={goToNextMonth} 
+                        disabled={isFutureMonth}
+                        className={`p-2 rounded-full transition ${isFutureMonth ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-100'}`}
+                    >
+                        <ChevronRight size={20} />
+                    </button>
+                </div>
+
+                {/* Day Names (Min-Sab) - Perataan (Alignment Fix) dan Highlight Hari Terpilih */}
+                <div className="grid grid-cols-7 text-center text-xs font-bold uppercase mb-2">
+                    {dayNames.map((name, index) => (
+                        <span 
+                            key={index} 
+                            className={`h-8 w-8 flex items-center justify-center mx-auto transition-colors ${
+                                // FIX: Highlight nama hari yang sesuai dengan selectedDayIndex
+                                index === selectedDayIndex ? 'text-brand-red' : 'text-gray-500'
+                            }`}
+                        >
+                            {name}
+                        </span>
+                    ))}
+                </div>
+
+                {/* Days Grid - Mengubah ukuran tombol dan pewarnaan */}
+                <div className="grid grid-cols-7 gap-1 text-center">
+                    {days.map((day, index) => {
+                        if (!day.isCurrentMonth) {
+                            return <span key={index} className="h-8"></span>;
+                        }
+
+                        const isSelected = day.date === selectedDate;
+                        const isToday = day.date === todayISO; 
+                        
+                        // Cek apakah hari yang ditampilkan adalah hari di masa depan
+                        const isFuture = day.date > todayISO; 
+
+                        return (
+                            <button
+                                key={index}
+                                onClick={() => handleDayClick(day.date)}
+                                disabled={isFuture}
+                                // Ubah ukuran tombol dan styling untuk active day
+                                className={`h-8 w-8 flex items-center justify-center text-sm font-medium transition-all duration-200 rounded-full mx-auto
+                                    ${isFuture 
+                                        ? 'text-gray-300 cursor-not-allowed' // Disabled/Future
+                                        : isSelected // Selected Day
+                                            ? 'bg-brand-red text-white shadow-lg shadow-red-500/30'
+                                            : isToday // Current Day (if not selected)
+                                                ? 'bg-red-100 text-brand-red border border-brand-red/50 hover:bg-red-200' 
+                                                : 'text-gray-700 hover:bg-gray-100' // Normal Day
+                                    }
+                                `}
+                            >
+                                {day.dayNum}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+    };
+
 
     return (
         <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-space animate-fadeIn">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl border border-gray-200 relative flex flex-col max-h-[85vh]">
+            {/* Menggunakan max-w-md agar modal lebih ramping */}
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md border-2 border-brand-red/20 relative flex flex-col max-h-[90vh]"> 
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-3 text-brand-red">
                         <History size={28} />
@@ -71,19 +229,36 @@ const HistoryModal = ({ logs, onClose }) => {
                     </div>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-900 hover:bg-gray-100 p-2 rounded-full transition"><X size={24} /></button>
                 </div>
-                <div className="p-6 overflow-y-auto bg-gray-50 space-y-3">
-                    {logs.length === 0 ? (
-                        <p className="text-center text-gray-400 py-8">No activity found.</p>
+                
+                {/* Custom Calendar Picker */}
+                <div className="p-4 border-b border-gray-100"> {/* Mengurangi padding atas/bawah */}
+                    <CalendarGrid />
+                </div>
+
+                <div className="p-6 overflow-y-auto bg-gray-50 space-y-3 flex-1">
+                    <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">
+                        Aktivitas pada {new Date(selectedDate).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </h4>
+
+                    {loadingLogs ? (
+                        <p className="text-center text-gray-400 py-8 flex items-center justify-center gap-2">
+                             <Loader2 size={24} className="animate-spin text-brand-red" /> Memuat log harian...
+                        </p>
+                    ) : logsForSelectedDate.length === 0 ? (
+                        <div className="text-center text-gray-400 py-8 bg-white rounded-xl border border-dashed border-gray-200">
+                             <Dumbbell className="mx-auto text-gray-300 mb-2" size={32} />
+                            <p>Tidak ada aktivitas yang tercatat pada tanggal ini.</p>
+                        </div>
                     ) : (
-                        currentLogs.map((log) => (
-                            <div key={log.id} className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
+                        logsForSelectedDate.map((log) => (
+                            <div key={log.id} className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:ring-1 hover:ring-brand-red/50 transition">
                                 <div className="flex items-center gap-4">
-                                    <div className="bg-gray-50 p-2 rounded-lg text-gray-500">
-                                        <CalendarDays size={20} />
+                                    <div className="bg-gray-50 p-2 rounded-lg text-brand-red">
+                                        <Clock size={20} />
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-gray-900">{log.exercise_name}</h4>
-                                        <p className="text-xs text-gray-500 font-medium">{log.date}</p>
+                                        <p className="text-xs text-gray-500 font-medium">Pukul: {log.date.split(' ')[1]}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
@@ -98,31 +273,16 @@ const HistoryModal = ({ logs, onClose }) => {
                         ))
                     )}
                 </div>
-                {totalPages > 1 && (
-                    <div className="p-4 border-t border-gray-100 shrink-0 bg-white rounded-b-3xl flex justify-between items-center">
-                        <button 
-                            onClick={() => setPage(p => Math.max(1, p - 1))}
-                            disabled={page === 1}
-                            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-                        >
-                            <ArrowLeft size={20} />
-                        </button>
-                        <span className="text-sm font-medium text-gray-600">Page {page} of {totalPages}</span>
-                        <button 
-                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                            disabled={page === totalPages}
-                            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-                        >
-                            <ArrowRight size={20} />
-                        </button>
-                    </div>
-                )}
+                <div className="p-6 pt-4 border-t border-gray-100 shrink-0 bg-white rounded-b-3xl">
+                    <button onClick={onClose} className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-black transition shadow-lg">TUTUP</button>
+                </div>
             </div>
         </div>
     );
 };
 
-// --- MAIN COMPONENT ---
+
+// --- MAIN COMPONENT (Memperbarui Logic State) ---
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -133,18 +293,54 @@ export default function Profile() {
   // Modal States
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showFailureModal, setShowFailureModal] = useState(false);
+  // State untuk menyimpan konten modal error secara dinamis
+  const [failureModalContent, setFailureModalContent] = useState({ title: '', message: '' }); 
   
   // AI & Features States
   const [analyzing, setAnalyzing] = useState(false);
   const [suggestion, setSuggestion] = useState(null);
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
   
+  // --- STATE BARU ---
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  // Default to today's date in YYYY-MM-DD format (menggunakan fungsi Date object untuk inisialisasi)
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0].slice(0, 10)); // Safe initialization
+  const [logsForSelectedDate, setLogsForSelectedDate] = useState([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  // --------------------
+
   // Edit Data State
   const [editData, setEditData] = useState({});
 
   useEffect(() => {
     fetchProfile();
   }, []);
+
+  // --- FUNGSI BARU: Mengambil Log Berdasarkan Tanggal dari Backend ---
+  const fetchLogsByDate = async (dateParam) => {
+    setLoadingLogs(true);
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) { 
+            navigate('/login'); 
+            return; 
+        }
+
+        // Panggil endpoint baru di Backend
+        const res = await axios.get(`${API_BASE_URL}/users/logs?date_str=${dateParam}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        setLogsForSelectedDate(res.data);
+    } catch (error) {
+        console.error("Gagal mengambil log:", error);
+        setLogsForSelectedDate([]);
+        if (error.response?.status === 401) {
+             navigate('/login'); 
+        }
+    } finally {
+        setLoadingLogs(false);
+    }
+  };
+
 
   const fetchProfile = async () => {
     try {
@@ -156,13 +352,17 @@ export default function Profile() {
         });
         
         setUser(res.data);
+        // Memastikan editData memiliki semua field yang diperlukan oleh backend
         setEditData({
             weight: res.data.weight,
             height: res.data.height,
             goal: res.data.goal,
             location: res.data.location,
             fitness_level: res.data.fitness_level,
-            sessions_per_week: 3, busy_times: [], injuries: [] 
+            sessions_per_week: 3, // Default value, should be handled by backend or fetched if needed
+            preferred_workout_time: 'Anytime',
+            busy_times: [], // Placeholder for API requirement
+            injuries: [] // Placeholder for API requirement
         });
     } catch (error) {
         console.error("Gagal ambil profil:", error);
@@ -179,6 +379,11 @@ export default function Profile() {
             ...editData,
             weight: parseFloat(editData.weight),
             height: parseInt(editData.height),
+            // Tambahkan field yang mungkin hilang tapi dibutuhkan API PUT (UserUpdateInput)
+            sessions_per_week: editData.sessions_per_week || 3,
+            preferred_workout_time: editData.preferred_workout_time || 'Anytime',
+            busy_times: editData.busy_times || [],
+            injuries: editData.injuries || [],
         };
         await axios.put(`${API_BASE_URL}/users/me`, payload, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -187,6 +392,11 @@ export default function Profile() {
         fetchProfile();
         setShowSuccessModal(true);
     } catch (error) {
+        // Ganti alert: Set konten dan tampilkan modal
+        setFailureModalContent({
+            title: "Update Profile Failed",
+            message: error.response?.data?.detail || "Gagal memperbarui data profil. Cek input atau server."
+        });
         setShowFailureModal(true);
     } finally {
         setLoading(false);
@@ -202,11 +412,34 @@ export default function Profile() {
           });
           setSuggestion(res.data.suggestion);
       } catch (error) {
-          alert("Gagal melakukan analisis.");
+          // Ganti alert: Set konten dan tampilkan modal
+          console.error("Gagal melakukan analisis:", error);
+          setFailureModalContent({
+              title: "AI Analysis Failed",
+              message: error.response?.data?.detail || "Gagal terhubung ke server/Gemini API. Cek koneksi backend."
+          });
+          setShowFailureModal(true);
       } finally {
           setAnalyzing(false);
       }
   };
+
+  // --- FUNGSI BARU: Untuk membuka modal dan inisialisasi tanggal/log ---
+  const handleOpenHistoryModal = () => {
+    // 1. Set default tanggal ke hari ini
+    const today = new Date();
+    const todayISO = today.toISOString().split('T')[0];
+    
+    setSelectedDate(todayISO);
+    
+    // 2. Muat log untuk hari ini
+    fetchLogsByDate(todayISO);
+    
+    // 3. Buka modal
+    setShowHistoryModal(true);
+  };
+  // ---------------------------------------------------------------------
+
 
   if (loading || !user) return <div className="min-h-screen flex justify-center items-center"><Loader2 className="animate-spin text-brand-red" size={48}/></div>;
 
@@ -216,9 +449,30 @@ export default function Profile() {
       
       {/* MODALS */}
       {suggestion && <AnalysisModal suggestion={suggestion} onClose={() => setSuggestion(null)} />}
-      {showHistoryModal && <HistoryModal logs={user.recent_activity} onClose={() => setShowHistoryModal(false)} />}
+      
+      {/* MENGGUNAKAN HistoryLogModal BARU */}
+      {showHistoryModal && (
+        <HistoryLogModal 
+            onClose={() => setShowHistoryModal(false)}
+            fetchLogsByDate={fetchLogsByDate}
+            loadingLogs={loadingLogs}
+            logsForSelectedDate={logsForSelectedDate}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+        />
+      )}
+
+      {/* RENDER DYNAMIC FAILURE MODAL */}
+      {showFailureModal && (
+        <FailureModal 
+            title={failureModalContent.title} 
+            message={failureModalContent.message} 
+            onClose={() => setShowFailureModal(false)} 
+        />
+      )}
+
       {showSuccessModal && <SuccessModal message="Profile updated successfully!" onClose={() => setShowSuccessModal(false)} />}
-      {showFailureModal && <FailureModal title="Update Failed" message="Could not update profile." onClose={() => setShowFailureModal(false)} />}
+      
 
       {/* BACKGROUND */}
       <div className="bg-noise z-0"></div>
@@ -312,7 +566,7 @@ export default function Profile() {
                             <h3 className="font-bold text-gray-900 text-xl">Recent Activity</h3>
                         </div>
                         <button 
-                            onClick={() => setShowHistoryModal(true)}
+                            onClick={handleOpenHistoryModal}
                             className="text-sm font-bold text-gray-500 hover:text-brand-red transition flex items-center gap-1"
                         >
                             View All <ArrowRight size={14} />

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import Any
-from datetime import datetime, timedelta # <-- Tambah timedelta
+from typing import Any, List
+from datetime import datetime, timedelta
 
 from app.api import deps
 from app.models.user import User
@@ -57,9 +57,9 @@ async def get_user_profile(
             rating=log.rating
         ))
 
-    # --- FITUR 3: WEEKLY REPORT WRITER (FIXED) ---
+    # --- FITUR 3: WEEKLY REPORT WRITER ---
     
-    # Hitung tanggal 7 hari yang lalu menggunakan Python (Lebih Stabil)
+    # Hitung tanggal 7 hari yang lalu
     cutoff_date = datetime.now() - timedelta(days=7)
     
     # Query log dengan filter tanggal Python
@@ -69,11 +69,9 @@ async def get_user_profile(
     ).order_by(UserLog.log_date.asc()).all()
     
     # Panggil AI (Async)
-    # Jika log kosong, chat_service akan handle default text "Belum ada latihan"
     ai_report = await chat_service.generate_weekly_report(current_user.username, weekly_logs)
 
     # 3. Mapping & Return
-    # Helper safe string conversion for Enums
     def get_val(x): return x.value if hasattr(x, 'value') else str(x)
 
     return UserProfileResponse(
@@ -120,3 +118,42 @@ async def analyze_user_progress(
     suggestion = await chat_service.analyze_performance(current_user, logs, schedule_items)
     
     return {"suggestion": suggestion}
+
+# ENDPOINT UNTUK LOG AKTIVITAS HARIAN
+@router.get("/logs", response_model=List[UserActivityLog])
+def get_user_logs_by_date(
+    date_str: str, # Terima tanggal sebagai string YYYY-MM-DD
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user)
+) -> List[UserActivityLog]:
+    """Mengambil semua log aktivitas untuk tanggal tertentu."""
+    
+    # 1. Validasi dan Konversi Tanggal
+    try:
+        # Coba konversi string ke objek date Python
+        query_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Format tanggal tidak valid. Gunakan YYYY-MM-DD.")
+
+    # 2. Query Log
+    logs = db.query(UserLog)\
+        .filter(UserLog.user_id == current_user.id)\
+        .filter(func.date(UserLog.log_date) == query_date)\
+        .order_by(UserLog.log_date.asc()).all()
+    
+    # 3. Mapping ke Response Schema
+    activity_list = []
+    for log in logs:
+        ex_name = log.schedule_item.exercise.name if log.schedule_item and log.schedule_item.exercise else "Latihan Bebas"
+        
+        # Output waktu dalam format yang sama (YYYY-MM-DD HH:MM)
+        activity_list.append(UserActivityLog(
+            id=log.id,
+            date=log.log_date.strftime("%Y-%m-%d %H:%M"),
+            exercise_name=ex_name,
+            duration=log.actual_duration_minutes or 0,
+            calories=log.calories_burned or 0,
+            rating=log.rating
+        ))
+        
+    return activity_list
