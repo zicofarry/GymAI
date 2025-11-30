@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown'; // <--- IMPORT BARU: Untuk render Markdown
 import { 
     User, TrendingUp, Activity, MapPin, Save, 
     Dumbbell, Flame, Clock, CalendarDays, History, 
@@ -35,6 +36,7 @@ const FailureModal = ({ title, message, onClose }) => (
     </div>
 );
 
+// --- MODIFIED: AnalysisModal dengan React Markdown ---
 const AnalysisModal = ({ suggestion, onClose }) => (
     <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-space animate-fadeIn">
         <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg border-2 border-purple-200 ring-4 ring-purple-500/20 relative flex flex-col max-h-[85vh]">
@@ -45,9 +47,14 @@ const AnalysisModal = ({ suggestion, onClose }) => (
                 </div>
                 <button onClick={onClose} className="text-gray-400 hover:text-gray-900 hover:bg-gray-100 p-2 rounded-full transition"><X size={24} /></button>
             </div>
-            <div className="p-6 overflow-y-auto prose prose-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                {suggestion}
+            
+            {/* BAGIAN INI DIUPDATE: Menggunakan ReactMarkdown dan styling prose */}
+            <div className="p-6 overflow-y-auto text-gray-600 leading-relaxed">
+                <div className="prose prose-sm max-w-none prose-p:my-2 prose-headings:font-bold prose-headings:text-gray-800 prose-strong:text-gray-900 prose-ul:list-disc prose-ul:pl-4 prose-li:my-1">
+                    <ReactMarkdown>{suggestion}</ReactMarkdown>
+                </div>
             </div>
+
             <div className="p-6 pt-4 border-t border-gray-100 shrink-0 bg-white rounded-b-3xl">
                 <button onClick={onClose} className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-black transition shadow-lg">Got it!</button>
             </div>
@@ -448,6 +455,7 @@ export default function Profile() {
       <Navbar />
       
       {/* MODALS */}
+      {/* DIUPDATE: Menampilkan modal analisis dengan Markdown */}
       {suggestion && <AnalysisModal suggestion={suggestion} onClose={() => setSuggestion(null)} />}
       
       {/* MENGGUNAKAN HistoryLogModal BARU */}
@@ -531,9 +539,24 @@ export default function Profile() {
                     <h3 className="text-lg font-bold mb-2 flex items-center gap-2 relative z-10 text-yellow-400">
                         <Sparkles size={18} /> Weekly Summary
                     </h3>
-                    <p className="text-gray-300 text-sm leading-relaxed relative z-10 italic">
-                        "{user.weekly_report_text}"
-                    </p>
+                    
+                    {/* MODIFIED: Menggunakan ReactMarkdown untuk Weekly Summary */}
+                    {/* Kita tambahkan custom styling untuk elemen markdown agar kontras dengan background gelap */}
+                    <div className="text-gray-300 text-sm leading-relaxed relative z-10 italic">
+                        <ReactMarkdown 
+                            components={{
+                                // Override styling agar bold text terlihat kuning terang (senada icon)
+                                strong: ({node, ...props}) => <span className="text-yellow-400 font-bold" {...props} />,
+                                // Pastikan paragraf punya margin bottom
+                                p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                                // Styling untuk list jika AI memberikan poin-poin
+                                ul: ({node, ...props}) => <ul className="list-disc pl-4 my-2" {...props} />,
+                                li: ({node, ...props}) => <li className="my-0.5" {...props} />
+                            }}
+                        >
+                            {user.weekly_report_text}
+                        </ReactMarkdown>
+                    </div>
                 </div>
 
                 {/* STATS CARDS */}
@@ -674,4 +697,4 @@ export default function Profile() {
       </div>
     </div>
   );
-}
+}   
