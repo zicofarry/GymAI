@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { api } from '../config/api';
 // FIX: Menambahkan ShieldAlert, Sun, Moon, Sunrise, Sunset ke dalam import
 import { 
     User, Activity, Target, Calendar, Check, X, Clock, Plus, Trash, 
@@ -34,9 +34,6 @@ const TIME_PREFERENCES = [
 
 const getInitialBusySlots = () => ALL_DAYS.reduce((acc, day) => { acc[day] = []; return acc; }, {});
 const getInitialFullDayBlocked = () => ALL_DAYS.reduce((acc, day) => { acc[day] = false; return acc; }, {});
-
-// Base URL
-const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 
 
 // --- MODAL KHUSUS AUTH ---
@@ -323,8 +320,8 @@ export default function CreateSchedule() {
             busy_times: finalBusyTimes
         };
         
-        const response = await axios.post(
-            `${API_BASE_URL}/schedules/generate`, 
+        const response = await api.post(
+            `/schedules/generate`, 
             payload, 
             { headers: { 'Authorization': `Bearer ${token}` } }
         );

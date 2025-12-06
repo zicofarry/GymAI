@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { api } from '../config/api';
 import Navbar from '../components/Navbar';
 import { UserPlus, AtSign, Lock, User as UserIcon, CheckCircle2, AlertTriangle, X } from 'lucide-react'; 
 
-// Base URL
-const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 
 // --- MODAL KEGAGALAN (REUSABLE STRUCTURE) ---
 const FailureModal = ({ title, message, onClose }) => (
@@ -59,7 +57,7 @@ export default function Register() {
     setErrorModal({ show: false, title: '', message: '' }); // Reset error
     
     try {
-      await axios.post(`${API_BASE_URL}/register`, { username, email, password });
+      await api.post(`/register`, { username, email, password });
       
       setShowSuccessModal(true); 
 

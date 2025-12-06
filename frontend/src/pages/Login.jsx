@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { api } from '../config/api';
 import Navbar from '../components/Navbar';
 import { LogIn, AtSign, Lock, Loader2, CheckCircle2, AlertTriangle, X } from 'lucide-react'; 
 
-// Base URL (Disematkan di sini agar file mandiri)
-const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 
 // --- MODAL KEGAGALAN LOGIN (NEW) ---
 const LoginFailureModal = ({ onTryAgain }) => (
@@ -70,7 +68,7 @@ export default function Login() {
             const token = localStorage.getItem('token');
             
             try {
-                await axios.get(`${API_BASE_URL}/schedules/my-schedule`, {
+                await api.get(`/schedules/my-schedule`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 
@@ -95,7 +93,7 @@ export default function Login() {
     setShowFailureModal(false); 
     
     try {
-      const res = await axios.post(`${API_BASE_URL}/login`, { email, password });
+      const res = await api.post(`/login`, { email, password });
       
       localStorage.setItem('token', res.data.access_token);
       localStorage.setItem('username', res.data.username);

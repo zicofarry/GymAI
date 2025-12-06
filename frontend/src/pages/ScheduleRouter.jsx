@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom'; // Tambahkan Link
-import axios from 'axios';
+import { api } from '../config/api';
 import { Loader2, AlertTriangle, X } from 'lucide-react'; // Tambahkan AlertTriangle dan X
 
-// Base URL Hardcoded (Ganti jika menggunakan instance axios terpusat)
-const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 
 // --- MODAL KEGAGALAN/INFO (REUSABLE, DIADAPTASI) ---
 const FailureModal = ({ title, message, onClose, actionButton, actionLink }) => (
@@ -52,7 +50,7 @@ const ScheduleRouter = () => {
         const fetchScheduleExistence = async () => {
             try {
                 // Cek apakah ada jadwal aktif (jika 200 OK -> jadwal ada)
-                await axios.get(`${API_BASE_URL}/schedules/my-schedule`, {
+                await api.get(`/schedules/my-schedule`, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }

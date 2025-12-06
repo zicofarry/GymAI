@@ -1,14 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { api } from '../config/api';
 import { 
     Calendar, Clock, Zap, Dumbbell, ArrowRight, CheckCircle2, 
     TrendingUp, Award, Loader2, Undo2, AlertTriangle, X 
 } from 'lucide-react';
-
-// Base URL
-const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 
 // --- MODAL KEGAGALAN/INFO (REUSABLE) ---
 const FailureModal = ({ title, message, onClose, actionButton, actionLink }) => (
@@ -50,8 +47,8 @@ export default function ScheduleResult() {
         if (!token) { navigate('/login'); return; }
         
         try {
-            const response = await axios.get(
-                `${API_BASE_URL}/schedules/my-schedule`,
+            const response = await api.get(
+                `/schedules/my-schedule`,
                 { headers: { 'Authorization': `Bearer ${token}` } }
             );
             setResult(response.data);
@@ -89,8 +86,8 @@ export default function ScheduleResult() {
 
       const token = localStorage.getItem('token');
       try {
-          const response = await axios.post(
-              `${API_BASE_URL}/schedules/items/${itemId}/toggle`, 
+          const response = await api.post(
+              `/schedules/items/${itemId}/toggle`, 
               {}, 
               { headers: { 'Authorization': `Bearer ${token}` } }
           );

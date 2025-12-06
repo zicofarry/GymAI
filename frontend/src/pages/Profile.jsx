@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { api } from '../config/api';
 import ReactMarkdown from 'react-markdown'; // <--- IMPORT BARU: Untuk render Markdown
 import { 
     User, TrendingUp, Activity, MapPin, Save, 
@@ -10,7 +10,6 @@ import {
     AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight 
 } from 'lucide-react';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 
 // --- MODAL COMPONENTS (TANPA PERUBAHAN) ---
 
@@ -333,7 +332,7 @@ export default function Profile() {
         }
 
         // Panggil endpoint baru di Backend
-        const res = await axios.get(`${API_BASE_URL}/users/logs?date_str=${dateParam}`, {
+        const res = await api.get(`/users/logs?date_str=${dateParam}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         setLogsForSelectedDate(res.data);
@@ -354,7 +353,7 @@ export default function Profile() {
         const token = localStorage.getItem('token');
         if (!token) { navigate('/login'); return; }
 
-        const res = await axios.get(`${API_BASE_URL}/users/me`, {
+        const res = await api.get(`/users/me`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -392,7 +391,7 @@ export default function Profile() {
             busy_times: editData.busy_times || [],
             injuries: editData.injuries || [],
         };
-        await axios.put(`${API_BASE_URL}/users/me`, payload, {
+        await api.put(`/users/me`, payload, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         setIsEditing(false);
@@ -414,7 +413,7 @@ export default function Profile() {
       setAnalyzing(true);
       try {
           const token = localStorage.getItem('token');
-          const res = await axios.post(`${API_BASE_URL}/users/analyze`, {}, {
+          const res = await api.post(`/users/analyze`, {}, {
               headers: { 'Authorization': `Bearer ${token}` }
           });
           setSuggestion(res.data.suggestion);
