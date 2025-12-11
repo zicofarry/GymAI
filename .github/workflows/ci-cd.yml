@@ -1,0 +1,84 @@
+name: GymAI CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  # --- JOB 1: BACKEND INTEGARTION ---
+  backend-test:
+    runs-on: ubuntu-latest
+    
+    # Service Container untuk MySQL (karena backend butuh DB)
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: gymai
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+        cache: 'pip'
+
+    - name: Install Dependencies
+      working-directory: ./backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest httpx  # Install library testing
+
+    - name: Run Tests (Contoh)
+      working-directory: ./backend
+      env:
+        # Gunakan env var untuk koneksi ke Service Container MySQL
+        DATABASE_URL: mysql+pymysql://root:rootpassword@127.0.0.1:3306/gymai
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} # Ambil dari GitHub Secrets
+        SECRET_KEY: "testing_secret_key"
+      run: |
+        # Karena belum ada file test, kita cek apakah sintaks valid & server bisa start
+        python -m compileall . 
+        # Jika nanti ada unit test: pytest
+
+  # --- JOB 2: FRONTEND BUILD ---
+  frontend-build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install Dependencies
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: Build Project
+      working-directory: ./frontend
+      run: npm run build
+      
+    # (Opsional) Upload hasil build (dist folder) sebagai artifact
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-dist
+        path: frontend/dist
